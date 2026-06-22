@@ -1,8 +1,10 @@
 import { cn } from '@/lib/utils';
 
 interface SectionHeadingProps {
-  eyebrow?: string;
+  badge?: string;
+  italic?: string;
   title: string;
+  eyebrow?: string; // legacy alias — renders as badge
   subtitle?: string;
   className?: string;
   titleClassName?: string;
@@ -10,35 +12,37 @@ interface SectionHeadingProps {
 }
 
 export function SectionHeading({
-  eyebrow,
+  badge,
+  italic,
   title,
+  eyebrow,
   subtitle,
   className,
   titleClassName,
   align = 'left',
 }: SectionHeadingProps) {
+  const pillText = badge || eyebrow;
+
   return (
     <div className={cn(align === 'center' && 'text-center', className)}>
-      {eyebrow && (
-        <p className="label-micro mb-4">{eyebrow}</p>
+      {pillText && (
+        <div className={cn('mb-5', align === 'center' && 'flex justify-center')}>
+          <span className="section-badge">{pillText}</span>
+        </div>
       )}
       <h2
         className={cn(
-          'font-display text-3xl md:text-4xl lg:text-5xl font-bold text-[var(--ink)] leading-tight',
+          'text-4xl md:text-5xl lg:text-[3.5rem] leading-[1.08] tracking-tight text-[var(--ink)]',
           titleClassName
         )}
       >
-        {title}
-      </h2>
-      {/* Gold accent line */}
-      <div
-        className={cn(
-          'mt-4 h-px w-12 bg-[var(--gold)]',
-          align === 'center' && 'mx-auto'
+        {italic && (
+          <span className="font-display italic font-normal">{italic} </span>
         )}
-      />
+        <span className="font-heading font-bold">{title}</span>
+      </h2>
       {subtitle && (
-        <p className="mt-5 text-[var(--muted)] text-base md:text-lg leading-relaxed max-w-2xl">
+        <p className="mt-5 text-sm md:text-base text-[var(--muted)] leading-relaxed max-w-xl">
           {subtitle}
         </p>
       )}

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const NAV_LINKS = [
@@ -28,11 +27,7 @@ export function Nav({ onBookClick }: NavProps) {
   }, []);
 
   useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
+    document.body.style.overflow = mobileOpen ? 'hidden' : '';
     return () => {
       document.body.style.overflow = '';
     };
@@ -48,42 +43,41 @@ export function Nav({ onBookClick }: NavProps) {
             : 'bg-transparent'
         )}
       >
-        <nav className="max-w-7xl mx-auto px-6 lg:px-8 h-16 flex items-center justify-between">
+        <nav className="relative max-w-7xl mx-auto px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Logo */}
           <Link
             href="/"
-            className="font-heading font-bold text-lg text-[var(--ink)] tracking-tight hover:text-[var(--gold)] transition-colors"
+            className="font-heading font-bold text-base text-[var(--ink)] tracking-tight z-10"
           >
             Swift<span className="text-[var(--gold)]">Creator</span>
           </Link>
 
-          {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-8">
+          {/* Desktop nav — centered absolutely */}
+          <div className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm font-heading font-medium text-[var(--muted)] hover:text-[var(--ink)] transition-colors tracking-wide"
+                className="text-sm font-heading font-medium text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
               >
                 {link.label}
               </Link>
             ))}
           </div>
 
-          {/* CTA */}
-          <div className="hidden md:flex items-center">
-            <Button
-              size="sm"
+          {/* CTA pill */}
+          <div className="hidden md:flex items-center z-10">
+            <button
               onClick={onBookClick}
-              className="font-heading text-xs tracking-widest uppercase"
+              className="rounded-full px-5 py-2.5 bg-[var(--ink)] text-[var(--bg)] text-sm font-heading font-semibold hover:bg-[var(--gold)] transition-colors duration-200"
             >
-              Start a project
-            </Button>
+              Let&apos;s Chat →
+            </button>
           </div>
 
           {/* Mobile hamburger */}
           <button
-            className="md:hidden p-2 text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
+            className="md:hidden p-2 text-[var(--muted)] hover:text-[var(--ink)] transition-colors z-10"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
           >
@@ -114,16 +108,15 @@ export function Nav({ onBookClick }: NavProps) {
                 </Link>
               ))}
               <div className="mt-8">
-                <Button
-                  size="lg"
-                  className="w-full font-heading text-sm tracking-widest uppercase"
+                <button
+                  className="w-full rounded-full py-4 bg-[var(--ink)] text-[var(--bg)] text-sm font-heading font-semibold hover:bg-[var(--gold)] transition-colors"
                   onClick={() => {
                     setMobileOpen(false);
                     onBookClick?.();
                   }}
                 >
-                  Start a project
-                </Button>
+                  Let&apos;s Chat →
+                </button>
               </div>
             </div>
           </motion.div>
