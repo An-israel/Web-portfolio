@@ -14,12 +14,12 @@ export function ProjectCard({ project }: ProjectCardProps) {
   return (
     <motion.div
       whileHover={{ y: -4 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
+      transition={{ duration: 0.25, ease: 'easeOut' }}
       className="group"
     >
       <Link href={`/work/${project.slug}`} className="block">
         {/* Mockup */}
-        <div className="mb-5 rounded-sm overflow-hidden">
+        <div className="mb-5 rounded-2xl overflow-hidden border border-[var(--line)] bg-[var(--bg-card)]">
           <DeviceMockup
             src={project.cover_image_url || ''}
             alt={project.title}
@@ -29,21 +29,23 @@ export function ProjectCard({ project }: ProjectCardProps) {
         </div>
 
         {/* Meta */}
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-4 px-1">
           <div className="min-w-0">
-            <p className="label-micro mb-1.5">{project.category}</p>
-            <h3 className="font-heading font-semibold text-lg text-[var(--ink)] group-hover:text-[var(--gold)] transition-colors">
+            <p className="text-xs text-[var(--muted)] font-heading uppercase tracking-widest mb-1.5">
+              {project.category}
+            </p>
+            <h3 className="font-heading font-semibold text-base text-[var(--ink)] group-hover:text-[var(--gold)] transition-colors leading-snug">
               {project.title}
             </h3>
             {project.short_description && (
-              <p className="mt-2 text-sm text-[var(--muted)] line-clamp-2 leading-relaxed">
+              <p className="mt-1.5 text-xs text-[var(--muted)] line-clamp-2 leading-relaxed">
                 {project.short_description}
               </p>
             )}
-            {/* Gold underline grows on hover */}
-            <div className="mt-3 h-px w-0 bg-[var(--gold)] transition-all duration-300 group-hover:w-full" />
           </div>
-          <ArrowUpRight className="w-5 h-5 text-[var(--muted)] group-hover:text-[var(--gold)] transition-colors shrink-0 mt-1" />
+          <div className="w-8 h-8 rounded-full border border-[var(--line)] flex items-center justify-center shrink-0 mt-0.5 group-hover:border-[var(--gold)] transition-colors">
+            <ArrowUpRight className="w-3.5 h-3.5 text-[var(--muted)] group-hover:text-[var(--gold)] transition-colors" />
+          </div>
         </div>
       </Link>
     </motion.div>

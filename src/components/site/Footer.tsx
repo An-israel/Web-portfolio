@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { buildWhatsAppLink, buildMailtoLink } from '@/lib/contact';
 
@@ -9,33 +11,36 @@ const NAV_LINKS = [
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
-
   const waLink = buildWhatsAppLink("Hi Aniekan, I'd like to discuss a website project.");
   const mailLink = buildMailtoLink(
     'Project Inquiry — SwiftCreator',
     "Hi Aniekan,\n\nI'd like to discuss a website project.\n\n"
   );
 
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   return (
     <footer className="border-t border-[var(--line)] bg-[var(--bg)] mt-auto">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-          {/* Brand */}
-          <div className="md:col-span-1">
-            <Link
-              href="/"
-              className="font-heading font-bold text-lg text-[var(--ink)] tracking-tight hover:text-[var(--gold)] transition-colors"
-            >
-              Swift<span className="text-[var(--gold)]">Creator</span>
-            </Link>
-            <p className="mt-4 text-sm text-[var(--muted)] leading-relaxed max-w-xs">
-              Premium websites built for businesses that refuse to be overlooked.
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 pt-16">
+        {/* 4-column grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-10 pb-12 border-b border-[var(--line)]">
+          {/* Location */}
+          <div>
+            <p className="text-xs text-[var(--muted)] uppercase tracking-widest font-heading mb-4">
+              Location
+            </p>
+            <p className="text-sm text-[var(--muted)] leading-relaxed">
+              Abuja, Nigeria
             </p>
           </div>
 
-          {/* Nav */}
+          {/* Links */}
           <div>
-            <p className="label-micro mb-4">Navigation</p>
+            <p className="text-xs text-[var(--muted)] uppercase tracking-widest font-heading mb-4">
+              Links
+            </p>
             <ul className="space-y-3">
               {NAV_LINKS.map((link) => (
                 <li key={link.href}>
@@ -52,38 +57,80 @@ export function Footer() {
 
           {/* Contact */}
           <div>
-            <p className="label-micro mb-4">Get in touch</p>
+            <p className="text-xs text-[var(--muted)] uppercase tracking-widest font-heading mb-4">
+              Contact
+            </p>
             <ul className="space-y-3">
               <li>
                 <a
                   href={waLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-[var(--muted)] hover:text-[var(--gold)] transition-colors flex items-center gap-2"
+                  className="text-sm text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
                 >
-                  <span className="text-[var(--gold)]">&rarr;</span> WhatsApp
+                  WhatsApp
                 </a>
               </li>
               <li>
                 <a
                   href={mailLink}
-                  className="text-sm text-[var(--muted)] hover:text-[var(--gold)] transition-colors flex items-center gap-2"
+                  className="text-sm text-[var(--muted)] hover:text-[var(--ink)] transition-colors break-all"
                 >
-                  <span className="text-[var(--gold)]">&rarr;</span> Email
+                  aniekaneazy@gmail.com
                 </a>
               </li>
             </ul>
           </div>
+
+          {/* Social */}
+          <div>
+            <p className="text-xs text-[var(--muted)] uppercase tracking-widest font-heading mb-4">
+              Social
+            </p>
+            <ul className="space-y-3">
+              {[
+                { label: 'Instagram', href: '#' },
+                { label: 'X (Twitter)', href: '#' },
+                { label: 'Behance', href: '#' },
+              ].map((s) => (
+                <li key={s.label}>
+                  <a
+                    href={s.href}
+                    className="text-sm text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
+                  >
+                    {s.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
-        <div className="mt-12 pt-8 border-t border-[var(--line)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        {/* Copyright row */}
+        <div className="flex items-center justify-between py-5">
           <p className="text-xs text-[var(--muted)]">
-            &copy; {currentYear} SwiftCreator. All rights reserved.
+            © {currentYear} SwiftCreator. All Right Reserved
           </p>
-          <p className="text-xs text-[var(--muted)]">
-            Built for leaders, by Aniekan Israel.
-          </p>
+          <button
+            onClick={scrollToTop}
+            className="text-xs text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] rounded-full px-4 py-1.5 transition-colors font-heading"
+          >
+            Back to Top ↑
+          </button>
         </div>
+      </div>
+
+      {/* Giant brand text */}
+      <div className="overflow-hidden pointer-events-none select-none">
+        <p
+          className="font-display font-bold text-center leading-none pb-2"
+          style={{
+            fontSize: 'clamp(72px, 16vw, 220px)',
+            color: 'rgba(255,255,255,0.035)',
+          }}
+        >
+          SwiftCreator
+        </p>
       </div>
     </footer>
   );
