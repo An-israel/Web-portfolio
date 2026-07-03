@@ -24,6 +24,7 @@ export default function InquiryDetail({ params }: { params: Promise<{ id: string
   const router = useRouter();
   const [row, setRow] = useState<HireInquiry | null>(null);
   const [notes, setNotes] = useState('');
+  const [budgetInput, setBudgetInput] = useState('');
   const [saved, setSaved] = useState('');
 
   useEffect(() => {
@@ -38,6 +39,7 @@ export default function InquiryDetail({ params }: { params: Promise<{ id: string
           const r = data as unknown as HireInquiry;
           setRow(r);
           setNotes(r.internal_notes || '');
+          setBudgetInput(r.budget_range || '');
           if (r.status === 'new') {
             supabase.from('inquiries').update({ status: 'reviewing' }).eq('id', id).then(() => {});
           }
@@ -97,7 +99,6 @@ export default function InquiryDetail({ params }: { params: Promise<{ id: string
       <dl className="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-4">
         {[
           ['Type', row.project_type],
-          ['Budget', row.budget_range || '—'],
           ['Timeline', row.timeline || '—'],
           ['How found', row.how_found || '—'],
           ['Received', new Date(row.created_at).toLocaleString('en-GB')],
@@ -150,6 +151,19 @@ export default function InquiryDetail({ params }: { params: Promise<{ id: string
               </button>
             ))}
           </div>
+        </div>
+        <div className="sm:col-span-2">
+          <MonoLabel className="text-[var(--mist)] block mb-2">BUDGET</MonoLabel>
+          <input
+            value={budgetInput}
+            onChange={(e) => setBudgetInput(e.target.value)}
+            onBlur={() => {
+              const v = budgetInput.trim();
+              if (v !== (row.budget_range || '')) patch({ budget_range: v || null });
+            }}
+            placeholder="e.g. $5k–$15k"
+            className="w-full rounded-md border border-[var(--steel)] bg-[var(--graphite)] px-3 py-2.5 text-sm text-[var(--platinum)] placeholder:text-[var(--mist)] focus:border-[var(--silver)] focus:outline-none"
+          />
         </div>
       </div>
 

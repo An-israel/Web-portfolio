@@ -23,6 +23,7 @@ export const SITE_SETTINGS: SiteSettings = {
     stack_depth: 'FRONTEND → INFRA',
     response_time: '< 24H',
   },
+  budget_options: ['<$2k', '$2k–$5k', '$5k–$15k', '$15k–$50k', '$50k+'],
 };
 
 export const PROJECTS: WorkProject[] = [

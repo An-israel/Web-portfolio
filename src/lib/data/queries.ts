@@ -88,6 +88,10 @@ export async function fetchSiteSettings(): Promise<SiteSettings> {
       availability_status: get('availability_status', SEED_SETTINGS.availability_status),
       resume_url: url('resume_url', SEED_SETTINGS.resume_url),
       stats: get('stats', SEED_SETTINGS.stats),
+      budget_options: (() => {
+        const v = get<string[]>('budget_options', SEED_SETTINGS.budget_options);
+        return Array.isArray(v) && v.length ? v : SEED_SETTINGS.budget_options;
+      })(),
     };
   } catch {
     return SEED_SETTINGS;
