@@ -64,7 +64,7 @@ export interface HireInquiry {
   company: string | null;
   role_at_company: string | null;
   project_type: InquiryProjectType;
-  budget_range: InquiryBudget | null;
+  budget_range: string | null;
   timeline: InquiryTimeline | null;
   description: string;
   how_found: string | null;
@@ -95,6 +95,7 @@ export interface SiteSettings {
   availability_status: AvailabilityStatus;
   resume_url: string | null;
   stats: SiteStats;
+  budget_options: string[];
 }
 
 // ============================================================

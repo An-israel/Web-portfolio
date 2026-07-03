@@ -6,6 +6,7 @@ import { MonoLabel } from '@/components/site/MonoLabel';
 import type { SiteStats } from '@/types';
 
 const URL_RE = /^https?:\/\/.+/;
+const DEFAULT_BUDGETS = ['<$2k', '$2k–$5k', '$5k–$15k', '$15k–$50k', '$50k+'];
 
 export default function SettingsAdmin() {
   const [s, setS] = useState<Record<string, unknown>>({});
@@ -15,6 +16,7 @@ export default function SettingsAdmin() {
     stack_depth: '',
     response_time: '',
   });
+  const [budgets, setBudgets] = useState<string[]>(DEFAULT_BUDGETS);
   const [saved, setSaved] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -29,6 +31,8 @@ export default function SettingsAdmin() {
         (data || []).forEach((r) => (map[r.key] = r.value));
         setS(map);
         if (map.stats) setStats(map.stats as SiteStats);
+        if (Array.isArray(map.budget_options) && map.budget_options.length)
+          setBudgets(map.budget_options as string[]);
         setLoading(false);
       });
   }, []);
@@ -59,6 +63,7 @@ export default function SettingsAdmin() {
       { key: 'linkedin_url', value: str('linkedin_url') },
       { key: 'resume_url', value: str('resume_url') },
       { key: 'stats', value: stats },
+      { key: 'budget_options', value: budgets.map((b) => b.trim()).filter(Boolean) },
     ];
     const supabase = createClient();
     const { error: err } = await supabase
@@ -101,6 +106,22 @@ export default function SettingsAdmin() {
             <Field label="Stack depth" v={stats.stack_depth} on={(v) => setStats({ ...stats, stack_depth: v })} />
             <Field label="Response time" v={stats.response_time} on={(v) => setStats({ ...stats, response_time: v })} />
           </div>
+        </div>
+
+        <div>
+          <MonoLabel className="text-[var(--mist)] block mb-2">
+            HIRE-FORM BUDGET OPTIONS (ONE PER LINE)
+          </MonoLabel>
+          <textarea
+            value={budgets.join('\n')}
+            onChange={(e) => setBudgets(e.target.value.split('\n'))}
+            rows={5}
+            placeholder={DEFAULT_BUDGETS.join('\n')}
+            className="w-full rounded-md border border-[var(--steel)] bg-[var(--graphite)] px-4 py-2.5 text-sm text-[var(--platinum)] focus:border-[var(--silver)] focus:outline-none resize-y font-mono"
+          />
+          <p className="mt-1 text-xs text-[var(--mist)]">
+            These are the budget choices visitors pick from on /hire.
+          </p>
         </div>
 
         <div>

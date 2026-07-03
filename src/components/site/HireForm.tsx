@@ -6,12 +6,7 @@ import { Check, ArrowLeft, ArrowRight } from 'lucide-react';
 import { MonoLabel } from '@/components/site/MonoLabel';
 import { PulseLine } from '@/components/site/PulseLine';
 import { cn } from '@/lib/utils';
-import type {
-  InquiryProjectType,
-  InquiryBudget,
-  InquiryTimeline,
-  SiteSettings,
-} from '@/types';
+import type { InquiryProjectType, InquiryTimeline, SiteSettings } from '@/types';
 
 const PROJECT_TYPES: InquiryProjectType[] = [
   'AI Product',
@@ -22,13 +17,12 @@ const PROJECT_TYPES: InquiryProjectType[] = [
   'Other',
 ];
 
-const BUDGETS: InquiryBudget[] = ['<$2k', '$2k–$5k', '$5k–$15k', '$15k–$50k', '$50k+'];
 const TIMELINES: InquiryTimeline[] = ['ASAP', '2–4 weeks', '1–3 months', 'Flexible'];
 const HOW_FOUND = ['GitHub', 'X', 'LinkedIn', 'Referral', 'Search', 'Other'];
 
 interface FormState {
   project_type: InquiryProjectType | '';
-  budget_range: InquiryBudget | 'Salary role' | '';
+  budget_range: string;
   timeline: InquiryTimeline | '';
   description: string;
   full_name: string;
@@ -268,7 +262,7 @@ export function HireForm({ settings }: { settings: SiteSettings }) {
                   </p>
                 ) : (
                   <div className="mt-4 flex flex-wrap gap-2">
-                    {BUDGETS.map((b) => (
+                    {settings.budget_options.map((b) => (
                       <Pill key={b} active={form.budget_range === b} onClick={() => set('budget_range', b)}>
                         {b}
                       </Pill>
