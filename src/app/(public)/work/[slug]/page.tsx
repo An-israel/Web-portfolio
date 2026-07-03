@@ -4,19 +4,21 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, ArrowRight, ExternalLink } from 'lucide-react';
 import { MonoLabel } from '@/components/site/MonoLabel';
-import { getAllProjects, getProjectBySlug } from '@/lib/data/site';
+import { fetchAllProjects, fetchProjectBySlug, allProjectSlugs } from '@/lib/data/queries';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
+// Seed slugs are prerendered; admin-added slugs render on demand.
 export function generateStaticParams() {
-  return getAllProjects().map((p) => ({ slug: p.slug }));
+  return allProjectSlugs();
 }
+export const dynamicParams = true;
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const project = getProjectBySlug(slug);
+  const project = await fetchProjectBySlug(slug);
   if (!project) return { title: 'Not found' };
   return {
     title: project.title,
@@ -53,10 +55,9 @@ function Section({
 
 export default async function CaseStudyPage({ params }: PageProps) {
   const { slug } = await params;
-  const project = getProjectBySlug(slug);
+  const [project, all] = await Promise.all([fetchProjectBySlug(slug), fetchAllProjects()]);
   if (!project) notFound();
 
-  const all = getAllProjects();
   const idx = all.findIndex((p) => p.slug === project.slug);
   const prev = idx > 0 ? all[idx - 1] : all[all.length - 1];
   const next = idx < all.length - 1 ? all[idx + 1] : all[0];

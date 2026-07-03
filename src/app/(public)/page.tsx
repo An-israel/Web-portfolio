@@ -4,7 +4,7 @@ import { MonoLabel } from '@/components/site/MonoLabel';
 import { PulseLine } from '@/components/site/PulseLine';
 import { Reveal } from '@/components/site/Reveal';
 import { ProjectCard } from '@/components/site/ProjectCard';
-import { getFeaturedProjects, getSiteSettings } from '@/lib/data/site';
+import { fetchFeaturedProjects, fetchSiteSettings } from '@/lib/data/queries';
 
 const CAPABILITIES = [
   {
@@ -21,9 +21,11 @@ const CAPABILITIES = [
   },
 ];
 
-export default function HomePage() {
-  const settings = getSiteSettings();
-  const featured = getFeaturedProjects();
+export default async function HomePage() {
+  const [settings, featured] = await Promise.all([
+    fetchSiteSettings(),
+    fetchFeaturedProjects(),
+  ]);
   const stats = [
     { label: 'PRODUCTS SHIPPED', value: settings.stats.products_shipped },
     { label: 'YEARS BUILDING', value: settings.stats.years_building },
@@ -31,8 +33,24 @@ export default function HomePage() {
     { label: 'RESPONSE TIME', value: settings.stats.response_time },
   ];
 
+  const sameAs = [settings.github_url, settings.x_url, settings.linkedin_url].filter(Boolean);
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: 'Aniekan Israel',
+    jobTitle: 'Full-Stack & AI Engineer',
+    email: `mailto:${settings.email}`,
+    address: { '@type': 'PostalAddress', addressLocality: 'Lagos', addressCountry: 'NG' },
+    url: process.env.NEXT_PUBLIC_SITE_URL || 'https://aniekanisrael.com',
+    ...(sameAs.length ? { sameAs } : {}),
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* ---------- HERO ---------- */}
       <section className="relative min-h-screen flex items-center">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-8 w-full pt-28 pb-20">

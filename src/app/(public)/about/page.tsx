@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { MonoLabel } from '@/components/site/MonoLabel';
 import { Reveal } from '@/components/site/Reveal';
-import { getSiteSettings } from '@/lib/data/site';
+import { fetchSiteSettings } from '@/lib/data/queries';
 
 export const metadata: Metadata = {
   title: 'About',
@@ -55,8 +55,8 @@ const TIMELINE = [
   { year: '2026', milestone: 'Available for world-class teams.' },
 ];
 
-export default function AboutPage() {
-  const settings = getSiteSettings();
+export default async function AboutPage() {
+  const settings = await fetchSiteSettings();
 
   return (
     <>

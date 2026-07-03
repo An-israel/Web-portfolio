@@ -145,9 +145,10 @@ export interface Testimonial {
   id: string;
   author_name: string;
   author_role: string | null;
-  author_avatar_url: string | null;
+  author_company: string | null;
   quote: string;
-  is_published: boolean;
+  avatar_url: string | null;
+  published: boolean;
   sort_order: number;
   created_at: string;
 }

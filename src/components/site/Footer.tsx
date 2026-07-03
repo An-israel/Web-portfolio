@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { PulseLine } from './PulseLine';
 import { MonoLabel } from './MonoLabel';
-import { getSiteSettings } from '@/lib/data/site';
+import { fetchSiteSettings } from '@/lib/data/queries';
 
 const NAV_LINKS = [
   { href: '/work', label: 'Work' },
@@ -9,8 +9,8 @@ const NAV_LINKS = [
   { href: '/hire', label: 'Hire Me' },
 ];
 
-export function Footer() {
-  const settings = getSiteSettings();
+export async function Footer() {
+  const settings = await fetchSiteSettings();
 
   const socials = [
     { label: 'GitHub', href: settings.github_url },

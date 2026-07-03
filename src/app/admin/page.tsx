@@ -1,178 +1,108 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { FolderOpen, DollarSign, Star, Inbox, ArrowUpRight } from 'lucide-react';
-import type { Inquiry } from '@/types';
+import { MonoLabel } from '@/components/site/MonoLabel';
 
-async function getDashboardData() {
+async function getData() {
   try {
     const supabase = await createClient();
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+    const weekAgo = new Date(Date.now() - 7 * 864e5).toISOString();
 
-    const [
-      { count: totalProjects },
-      { count: publishedProjects },
-      { count: featuredProjects },
-      { count: unreadInquiries },
-      { data: latestInquiries },
-    ] = await Promise.all([
-      supabase.from('projects').select('*', { count: 'exact', head: true }),
-      supabase
-        .from('projects')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_published', true),
-      supabase
-        .from('projects')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_featured', true),
+    const [newInq, monthInq, views7, publishedProjects, latest] = await Promise.all([
+      supabase.from('inquiries').select('*', { count: 'exact', head: true }).eq('status', 'new'),
       supabase
         .from('inquiries')
         .select('*', { count: 'exact', head: true })
-        .eq('is_read', false),
-      supabase
-        .from('inquiries')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5),
+        .gte('created_at', monthStart.toISOString()),
+      supabase.from('page_views').select('*', { count: 'exact', head: true }).gte('created_at', weekAgo),
+      supabase.from('projects').select('*', { count: 'exact', head: true }).eq('published', true),
+      supabase.from('inquiries').select('*').order('created_at', { ascending: false }).limit(5),
     ]);
 
     return {
-      totalProjects: totalProjects || 0,
-      publishedProjects: publishedProjects || 0,
-      featuredProjects: featuredProjects || 0,
-      unreadInquiries: unreadInquiries || 0,
-      latestInquiries: (latestInquiries || []) as unknown as Inquiry[],
+      newInquiries: newInq.count || 0,
+      monthInquiries: monthInq.count || 0,
+      views7: views7.count || 0,
+      publishedProjects: publishedProjects.count || 0,
+      latest: (latest.data || []) as Array<{
+        id: string;
+        full_name: string;
+        company: string | null;
+        project_type: string;
+        status: string;
+        created_at: string;
+      }>,
     };
   } catch {
-    return {
-      totalProjects: 0,
-      publishedProjects: 0,
-      featuredProjects: 0,
-      unreadInquiries: 0,
-      latestInquiries: [],
-    };
+    return { newInquiries: 0, monthInquiries: 0, views7: 0, publishedProjects: 0, latest: [] };
   }
 }
 
-const STATS_CONFIG = [
-  { label: 'Total projects', icon: FolderOpen, key: 'totalProjects', href: '/admin/projects' },
-  { label: 'Published', icon: ArrowUpRight, key: 'publishedProjects', href: '/admin/projects' },
-  { label: 'Featured', icon: Star, key: 'featuredProjects', href: '/admin/projects' },
-  { label: 'Unread leads', icon: Inbox, key: 'unreadInquiries', href: '/admin/inquiries' },
-];
-
-export default async function AdminDashboard() {
-  const data = await getDashboardData();
-
-  const statValues: Record<string, number> = {
-    totalProjects: data.totalProjects,
-    publishedProjects: data.publishedProjects,
-    featuredProjects: data.featuredProjects,
-    unreadInquiries: data.unreadInquiries,
-  };
+export default async function AdminOverview() {
+  const d = await getData();
+  const stats = [
+    { label: 'NEW INQUIRIES', value: d.newInquiries, href: '/admin/inquiries', hot: d.newInquiries > 0 },
+    { label: 'INQUIRIES THIS MONTH', value: d.monthInquiries, href: '/admin/inquiries' },
+    { label: 'PAGE VIEWS (7D)', value: d.views7, href: '/admin/analytics' },
+    { label: 'PUBLISHED PROJECTS', value: d.publishedProjects, href: '/admin/projects' },
+  ];
 
   return (
     <div className="max-w-5xl">
-      <div className="mb-8">
-        <h1 className="font-heading font-semibold text-2xl text-[var(--ink)]">Dashboard</h1>
-        <p className="text-sm text-[var(--muted)] mt-1">Welcome back, Aniekan.</p>
-      </div>
+      <h1 className="font-display text-3xl text-[var(--platinum)] mb-1">Overview</h1>
+      <MonoLabel className="text-[var(--mist)]">MISSION CONTROL</MonoLabel>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-        {STATS_CONFIG.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <Link
-              key={stat.key}
-              href={stat.href}
-              className="p-5 border border-[var(--line)] rounded-sm bg-[var(--bg-raised)] hover:border-[var(--gold)] transition-colors group"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <Icon className="w-4 h-4 text-[var(--muted)] group-hover:text-[var(--gold)] transition-colors" />
-                <ArrowUpRight className="w-3.5 h-3.5 text-[var(--line)] group-hover:text-[var(--gold)] transition-colors" />
-              </div>
-              <div className="font-display text-3xl font-bold text-[var(--ink)] mb-1">
-                {statValues[stat.key]}
-              </div>
-              <div className="text-xs text-[var(--muted)] font-heading uppercase tracking-wider">
-                {stat.label}
-              </div>
-            </Link>
-          );
-        })}
-      </div>
-
-      {/* Latest inquiries */}
-      <div className="border border-[var(--line)] rounded-sm bg-[var(--bg-raised)]">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--line)]">
-          <h2 className="font-heading font-semibold text-sm text-[var(--ink)]">
-            Latest inquiries
-          </h2>
+      <div className="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((s) => (
           <Link
-            href="/admin/inquiries"
-            className="text-xs text-[var(--muted)] hover:text-[var(--gold)] transition-colors font-heading"
+            key={s.label}
+            href={s.href}
+            className="p-5 rounded-md border border-[var(--steel)] bg-[var(--graphite)] hover:border-[var(--silver)] transition-colors"
           >
-            View all &rarr;
+            <p className={`font-display text-4xl ${s.hot ? 'text-[var(--silver)]' : 'text-[var(--platinum)]'}`}>
+              {s.value}
+            </p>
+            <MonoLabel className="mt-2 block text-[var(--mist)]">{s.label}</MonoLabel>
+          </Link>
+        ))}
+      </div>
+
+      <div className="mt-10 rounded-md border border-[var(--steel)] bg-[var(--graphite)]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--steel)]">
+          <MonoLabel className="text-[var(--platinum)]">LATEST INQUIRIES</MonoLabel>
+          <Link href="/admin/inquiries" className="mono-label text-[var(--mist)] hover:text-[var(--platinum)]">
+            View all →
           </Link>
         </div>
-
-        {data.latestInquiries.length === 0 ? (
-          <div className="px-6 py-10 text-center text-sm text-[var(--muted)]">
-            No inquiries yet. They&apos;ll appear here when visitors contact you.
-          </div>
+        {d.latest.length === 0 ? (
+          <p className="px-5 py-10 text-center text-sm text-[var(--mist)]">
+            No inquiries yet — share your /hire link.
+          </p>
         ) : (
-          <ul className="divide-y divide-[var(--line)]">
-            {data.latestInquiries.map((inquiry) => (
-              <li key={inquiry.id} className="px-6 py-4">
-                <div className="flex items-start justify-between gap-4">
+          <ul className="divide-y divide-[var(--steel)]">
+            {d.latest.map((i) => (
+              <li key={i.id}>
+                <Link
+                  href={`/admin/inquiries/${i.id}`}
+                  className="flex items-center justify-between gap-4 px-5 py-4 hover:bg-[var(--steel)]/30 transition-colors"
+                >
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-heading font-medium text-sm text-[var(--ink)]">
-                        {inquiry.name}
-                      </span>
-                      {!inquiry.is_read && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] shrink-0" />
-                      )}
-                    </div>
-                    <p className="text-xs text-[var(--muted)] mt-0.5">
-                      {inquiry.project_type}
-                      {inquiry.email ? ` · ${inquiry.email}` : ''}
+                    <p className="text-sm text-[var(--platinum)]">
+                      {i.full_name}
+                      {i.company ? <span className="text-[var(--mist)]"> · {i.company}</span> : null}
                     </p>
-                    {inquiry.message && (
-                      <p className="text-xs text-[var(--muted)] mt-1 line-clamp-1 opacity-70">
-                        {inquiry.message}
-                      </p>
-                    )}
+                    <MonoLabel className="text-[var(--mist)]">{i.project_type}</MonoLabel>
                   </div>
-                  <time className="text-xs text-[var(--muted)] shrink-0">
-                    {new Date(inquiry.created_at).toLocaleDateString('en-GB', {
-                      day: 'numeric',
-                      month: 'short',
-                    })}
+                  <time className="mono-label text-[var(--mist)] shrink-0">
+                    {new Date(i.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                   </time>
-                </div>
+                </Link>
               </li>
             ))}
           </ul>
         )}
-      </div>
-
-      {/* Quick links */}
-      <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { href: '/admin/projects/new', label: 'New project' },
-          { href: '/admin/pricing', label: 'Edit pricing' },
-          { href: '/admin/testimonials', label: 'Add testimonial' },
-          { href: '/', label: 'View site', external: true },
-        ].map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            target={link.external ? '_blank' : undefined}
-            className="px-4 py-3 text-center text-sm font-heading font-medium text-[var(--muted)] border border-[var(--line)] rounded-sm hover:border-[var(--gold)] hover:text-[var(--gold)] transition-colors"
-          >
-            {link.label}
-          </Link>
-        ))}
       </div>
     </div>
   );

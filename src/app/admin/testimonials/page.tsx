@@ -1,272 +1,147 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { Plus, Pencil, Trash2, X, Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Plus, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { FeatureToggle } from '@/components/admin/FeatureToggle';
-import { useToast } from '@/components/ui/use-toast';
+import { MonoLabel } from '@/components/site/MonoLabel';
 import type { Testimonial } from '@/types';
 
-export default function AdminTestimonialsPage() {
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState<Partial<Testimonial> | null>(null);
-  const [saving, setSaving] = useState(false);
-  const { toast } = useToast();
+type Draft = Partial<Testimonial>;
 
-  const fetchTestimonials = useCallback(async () => {
+export default function TestimonialsAdmin() {
+  const [rows, setRows] = useState<Testimonial[]>([]);
+  const [editing, setEditing] = useState<Draft | null>(null);
+  const [error, setError] = useState('');
+
+  async function load() {
     const supabase = createClient();
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('testimonials')
       .select('*')
-      .order('sort_order');
-
-    if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    else setTestimonials((data || []) as unknown as Testimonial[]);
-    setLoading(false);
-  }, [toast]);
-
-  useEffect(() => {
-    fetchTestimonials();
-  }, [fetchTestimonials]);
-
-  function openNew() {
-    setEditing({
-      author_name: '',
-      author_role: '',
-      author_avatar_url: '',
-      quote: '',
-      is_published: false,
-      sort_order: testimonials.length,
-    });
+      .order('sort_order', { ascending: true });
+    setRows((data || []) as unknown as Testimonial[]);
   }
+  useEffect(() => {
+    load();
+  }, []);
 
-  async function handleSave() {
-    if (!editing?.author_name || !editing?.quote) {
-      toast({
-        title: 'Validation error',
-        description: 'Author name and quote are required.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setSaving(true);
-    const supabase = createClient();
-
+  async function save() {
+    setError('');
+    if (!editing?.author_name || !editing?.quote) return setError('Author and quote are required.');
     const payload = {
       author_name: editing.author_name,
       author_role: editing.author_role || null,
-      author_avatar_url: editing.author_avatar_url || null,
+      author_company: editing.author_company || null,
       quote: editing.quote,
-      is_published: editing.is_published || false,
-      sort_order: editing.sort_order || 0,
+      avatar_url: editing.avatar_url || null,
+      published: editing.published ?? false,
+      sort_order: Number(editing.sort_order) || 0,
     };
-
-    let error;
-    if (editing.id) {
-      const res = await supabase.from('testimonials').update(payload).eq('id', editing.id);
-      error = res.error;
-    } else {
-      const res = await supabase.from('testimonials').insert(payload);
-      error = res.error;
-    }
-
-    setSaving(false);
-
-    if (error) {
-      toast({ title: 'Save failed', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: editing.id ? 'Testimonial updated!' : 'Testimonial added!', variant: 'default' });
-      setEditing(null);
-      fetchTestimonials();
-    }
+    const supabase = createClient();
+    const res = editing.id
+      ? await supabase.from('testimonials').update(payload).eq('id', editing.id)
+      : await supabase.from('testimonials').insert(payload);
+    if (res.error) return setError(res.error.message);
+    setEditing(null);
+    load();
   }
 
-  async function handleDelete(id: string) {
+  async function remove(id: string) {
     if (!confirm('Delete this testimonial?')) return;
     const supabase = createClient();
-    const { error } = await supabase.from('testimonials').delete().eq('id', id);
-    if (error) toast({ title: 'Delete failed', description: error.message, variant: 'destructive' });
-    else {
-      toast({ title: 'Testimonial deleted' });
-      fetchTestimonials();
-    }
-  }
-
-  async function handleTogglePublish(id: string, value: boolean) {
-    const supabase = createClient();
-    const { error } = await supabase
-      .from('testimonials')
-      .update({ is_published: value })
-      .eq('id', id);
-
-    if (error) throw error;
-    setTestimonials((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, is_published: value } : t))
-    );
+    await supabase.from('testimonials').delete().eq('id', id);
+    load();
   }
 
   return (
-    <div className="max-w-4xl">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="font-heading font-semibold text-2xl text-[var(--ink)]">Testimonials</h1>
-        <Button onClick={openNew} className="font-heading text-xs tracking-widest uppercase">
-          <Plus className="w-4 h-4" />
-          Add testimonial
-        </Button>
+    <div className="max-w-3xl">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-3xl text-[var(--platinum)] mb-1">Testimonials</h1>
+          <MonoLabel className="text-[var(--mist)]">{rows.length} TOTAL</MonoLabel>
+        </div>
+        <button
+          onClick={() => setEditing({ published: false, sort_order: rows.length })}
+          className="inline-flex items-center gap-2 rounded-md bg-[var(--white)] text-[var(--obsidian)] px-4 py-2.5 text-sm font-semibold"
+        >
+          <Plus className="w-4 h-4" /> New
+        </button>
       </div>
 
-      {loading ? (
-        <div className="text-center py-10 text-[var(--muted)]">Loading...</div>
-      ) : testimonials.length === 0 ? (
-        <div className="text-center py-16 text-[var(--muted)] border border-[var(--line)] rounded-sm">
-          <p className="mb-4">No testimonials yet.</p>
-          <Button onClick={openNew} variant="outline" className="font-heading text-xs tracking-widest uppercase">
-            Add your first
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {testimonials.map((t) => (
-            <div
-              key={t.id}
-              className="flex items-start gap-4 p-5 border border-[var(--line)] rounded-sm bg-[var(--bg-raised)]"
-            >
-              <div className="w-10 h-10 rounded-full bg-[var(--line)] flex items-center justify-center shrink-0">
-                <span className="text-sm font-heading font-semibold text-[var(--muted)]">
-                  {t.author_name.charAt(0)}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-heading font-medium text-sm text-[var(--ink)]">
-                  {t.author_name}
-                </p>
-                <p className="text-xs text-[var(--muted)]">{t.author_role}</p>
-                <p className="text-sm text-[var(--muted)] mt-2 line-clamp-2">&ldquo;{t.quote}&rdquo;</p>
-              </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <FeatureToggle
-                  checked={t.is_published}
-                  onChange={(val) => handleTogglePublish(t.id, val)}
-                  label="Published"
-                />
-                <button
-                  onClick={() => setEditing(t)}
-                  className="p-1.5 text-[var(--muted)] hover:text-[var(--gold)] transition-colors"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => handleDelete(t.id)}
-                  className="p-1.5 text-[var(--muted)] hover:text-red-400 transition-colors"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Edit modal */}
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-[var(--bg-raised)] border border-[var(--line)] rounded-sm p-6 space-y-5">
-            <div className="flex items-center justify-between">
-              <h2 className="font-heading font-semibold text-[var(--ink)]">
-                {editing.id ? 'Edit testimonial' : 'New testimonial'}
-              </h2>
-              <button onClick={() => setEditing(null)} className="text-[var(--muted)] hover:text-[var(--ink)]">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div>
-              <Label>Author name *</Label>
-              <Input
-                value={editing.author_name || ''}
-                onChange={(e) => setEditing({ ...editing, author_name: e.target.value })}
-                placeholder="Chukwuemeka Eze"
-              />
-            </div>
-
-            <div>
-              <Label>Role / Company</Label>
-              <Input
-                value={editing.author_role || ''}
-                onChange={(e) => setEditing({ ...editing, author_role: e.target.value })}
-                placeholder="CEO, Horizon Real Estate"
-              />
-            </div>
-
-            <div>
-              <Label>Avatar URL</Label>
-              <Input
-                value={editing.author_avatar_url || ''}
-                onChange={(e) => setEditing({ ...editing, author_avatar_url: e.target.value })}
-                placeholder="https://..."
-              />
-            </div>
-
-            <div>
-              <Label>Quote *</Label>
-              <Textarea
-                value={editing.quote || ''}
-                onChange={(e) => setEditing({ ...editing, quote: e.target.value })}
-                rows={4}
-                placeholder="What they said about working with you..."
-              />
-            </div>
-
-            <div>
-              <Label>Sort order</Label>
-              <Input
-                type="number"
-                value={editing.sort_order || 0}
-                onChange={(e) =>
-                  setEditing({ ...editing, sort_order: parseInt(e.target.value) || 0 })
-                }
-                className="w-24"
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-heading font-medium text-[var(--ink)]">Published</p>
-                <p className="text-xs text-[var(--muted)]">Show on public site</p>
-              </div>
-              <Switch
-                checked={editing.is_published || false}
-                onCheckedChange={(v) => setEditing({ ...editing, is_published: v })}
-              />
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <Button
-                onClick={handleSave}
-                disabled={saving}
-                className="flex-1 font-heading text-xs tracking-widest uppercase"
-              >
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {saving ? 'Saving...' : 'Save'}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setEditing(null)}
-                className="font-heading text-xs tracking-widest uppercase"
-              >
-                Cancel
-              </Button>
-            </div>
+        <div className="mt-6 rounded-md border border-[var(--steel)] bg-[var(--graphite)] p-5 space-y-4">
+          <Text ph="Author name" v={editing.author_name || ''} on={(v) => setEditing({ ...editing, author_name: v })} />
+          <div className="grid grid-cols-2 gap-3">
+            <Text ph="Role" v={editing.author_role || ''} on={(v) => setEditing({ ...editing, author_role: v })} />
+            <Text ph="Company" v={editing.author_company || ''} on={(v) => setEditing({ ...editing, author_company: v })} />
+          </div>
+          <textarea
+            placeholder="Quote"
+            value={editing.quote || ''}
+            onChange={(e) => setEditing({ ...editing, quote: e.target.value })}
+            rows={3}
+            className="w-full rounded-md border border-[var(--steel)] bg-[var(--obsidian)] px-4 py-2.5 text-sm text-[var(--platinum)] focus:border-[var(--silver)] focus:outline-none resize-y"
+          />
+          <Text ph="Avatar URL (optional)" v={editing.avatar_url || ''} on={(v) => setEditing({ ...editing, avatar_url: v })} />
+          <label className="flex items-center gap-2 text-sm text-[var(--platinum)]">
+            <input
+              type="checkbox"
+              checked={editing.published ?? false}
+              onChange={(e) => setEditing({ ...editing, published: e.target.checked })}
+            />
+            Published
+          </label>
+          {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
+          <div className="flex gap-3">
+            <button onClick={save} className="rounded-md bg-[var(--white)] text-[var(--obsidian)] px-5 py-2.5 text-sm font-semibold">
+              Save
+            </button>
+            <button onClick={() => setEditing(null)} className="mono-label text-[var(--mist)] hover:text-[var(--platinum)]">
+              Cancel
+            </button>
           </div>
         </div>
       )}
+
+      <div className="mt-6 space-y-3">
+        {rows.map((r) => (
+          <div key={r.id} className="rounded-md border border-[var(--steel)] bg-[var(--graphite)] p-4 flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-sm text-[var(--platinum)]">
+                {r.author_name}
+                <span className="text-[var(--mist)]">
+                  {r.author_role ? ` · ${r.author_role}` : ''}
+                  {r.author_company ? ` @ ${r.author_company}` : ''}
+                </span>
+                {!r.published && <span className="ml-2 mono-label text-[var(--warning)]">DRAFT</span>}
+              </p>
+              <p className="mt-1 text-sm text-[var(--mist)] line-clamp-2">{r.quote}</p>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <button onClick={() => setEditing(r)} className="mono-label text-[var(--silver)] hover:text-[var(--white)]">
+                Edit
+              </button>
+              <button onClick={() => remove(r.id)} className="text-[var(--mist)] hover:text-[var(--danger)]">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        ))}
+        {rows.length === 0 && !editing && (
+          <p className="text-center text-[var(--mist)] py-10">No testimonials yet.</p>
+        )}
+      </div>
     </div>
+  );
+}
+
+function Text({ v, on, ph }: { v: string; on: (v: string) => void; ph: string }) {
+  return (
+    <input
+      placeholder={ph}
+      value={v}
+      onChange={(e) => on(e.target.value)}
+      className="w-full rounded-md border border-[var(--steel)] bg-[var(--obsidian)] px-4 py-2.5 text-sm text-[var(--platinum)] placeholder:text-[var(--mist)] focus:border-[var(--silver)] focus:outline-none"
+    />
   );
 }
