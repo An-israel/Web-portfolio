@@ -1,139 +1,153 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
-  FolderOpen,
-  DollarSign,
-  Star,
   Inbox,
+  FolderOpen,
+  MessageSquareQuote,
+  Settings,
+  BarChart3,
   LogOut,
   Menu,
   X,
 } from 'lucide-react';
-import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
-import { Toaster } from '@/components/ui/toaster';
+import type { AvailabilityStatus } from '@/types';
 
-const NAV_ITEMS = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
-  { href: '/admin/projects', label: 'Projects', icon: FolderOpen, exact: false },
-  { href: '/admin/pricing', label: 'Pricing', icon: DollarSign, exact: false },
-  { href: '/admin/testimonials', label: 'Testimonials', icon: Star, exact: false },
+const NAV = [
+  { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
   { href: '/admin/inquiries', label: 'Inquiries', icon: Inbox, exact: false },
+  { href: '/admin/projects', label: 'Projects', icon: FolderOpen, exact: false },
+  { href: '/admin/testimonials', label: 'Testimonials', icon: MessageSquareQuote, exact: false },
+  { href: '/admin/settings', label: 'Settings', icon: Settings, exact: false },
+  { href: '/admin/analytics', label: 'Analytics', icon: BarChart3, exact: false },
 ];
+
+const AVAIL: AvailabilityStatus[] = ['Available', 'Limited', 'Booked'];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [availability, setAvailability] = useState<AvailabilityStatus>('Available');
 
-  async function handleLogout() {
+  const isLogin = pathname === '/admin/login';
+
+  useEffect(() => {
+    if (isLogin) return;
+    const supabase = createClient();
+    supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'availability_status')
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.value) setAvailability(data.value as AvailabilityStatus);
+      });
+  }, [isLogin]);
+
+  async function setAvail(next: AvailabilityStatus) {
+    setAvailability(next);
+    const supabase = createClient();
+    await supabase
+      .from('site_settings')
+      .upsert({ key: 'availability_status', value: next }, { onConflict: 'key' });
+  }
+
+  async function logout() {
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push('/admin/login');
   }
 
-  const isActive = (href: string, exact: boolean) => {
-    if (exact) return pathname === href;
-    return pathname.startsWith(href);
-  };
+  const active = (href: string, exact: boolean) =>
+    exact ? pathname === href : pathname.startsWith(href);
+
+  if (isLogin) return <>{children}</>;
 
   return (
-    <>
-      <div className="min-h-screen bg-[var(--bg)] flex">
-        {/* Sidebar */}
-        <aside
-          className={cn(
-            'fixed inset-y-0 left-0 z-50 w-64 bg-[var(--bg-raised)] border-r border-[var(--line)] flex flex-col transition-transform duration-200',
-            'lg:translate-x-0 lg:static lg:z-auto',
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          )}
-        >
-          {/* Logo */}
-          <div className="h-16 px-6 flex items-center border-b border-[var(--line)]">
-            <Link href="/" className="font-heading font-bold text-[var(--ink)]">
-              Swift<span className="text-[var(--gold)]">Creator</span>
-            </Link>
-            <span className="ml-2 text-xs text-[var(--muted)] font-heading uppercase tracking-widest">
-              Admin
-            </span>
-          </div>
-
-          {/* Nav */}
-          <nav className="flex-1 p-4 space-y-1">
-            {NAV_ITEMS.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.href, item.exact);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={cn(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm font-heading font-medium transition-colors',
-                    active
-                      ? 'bg-[var(--gold)]/10 text-[var(--gold)]'
-                      : 'text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)]'
-                  )}
-                >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Logout */}
-          <div className="p-4 border-t border-[var(--line)]">
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-3 px-3 py-2.5 w-full rounded-sm text-sm font-heading font-medium text-[var(--muted)] hover:text-red-400 hover:bg-red-950/20 transition-colors"
-            >
-              <LogOut className="w-4 h-4 shrink-0" />
-              Sign out
-            </button>
-          </div>
-        </aside>
-
-        {/* Overlay for mobile */}
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
+    <div className="min-h-screen bg-[var(--obsidian)] flex">
+      <aside
+        className={cn(
+          'fixed inset-y-0 left-0 z-50 w-60 bg-[var(--graphite)] border-r border-[var(--steel)] flex flex-col transition-transform',
+          'lg:translate-x-0 lg:static',
+          open ? 'translate-x-0' : '-translate-x-full'
         )}
-
-        {/* Main content */}
-        <div className="flex-1 flex flex-col min-w-0">
-          {/* Top bar */}
-          <header className="h-16 border-b border-[var(--line)] px-6 flex items-center gap-4 bg-[var(--bg)] sticky top-0 z-30">
-            <button
-              className="lg:hidden text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            >
-              {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-            <div className="text-sm text-[var(--muted)]">
-              {NAV_ITEMS.find((i) => isActive(i.href, i.exact))?.label || 'Admin'}
-            </div>
-            <div className="ml-auto">
-              <Link
-                href="/"
-                target="_blank"
-                className="text-xs text-[var(--muted)] hover:text-[var(--ink)] transition-colors font-heading"
-              >
-                View site &rarr;
-              </Link>
-            </div>
-          </header>
-
-          <main className="flex-1 p-6 lg:p-8">{children}</main>
+      >
+        <div className="h-16 px-6 flex items-center border-b border-[var(--steel)]">
+          <Link href="/admin" className="mono-label text-[var(--platinum)]">
+            ANIEKAN ISRAEL
+          </Link>
         </div>
+        <nav className="flex-1 p-3 space-y-1">
+          {NAV.map((item) => {
+            const Icon = item.icon;
+            const on = active(item.href, item.exact);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors border-l-2',
+                  on
+                    ? 'border-[var(--silver)] text-[var(--platinum)] bg-[var(--steel)]/40'
+                    : 'border-transparent text-[var(--mist)] hover:text-[var(--platinum)]'
+                )}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+        <div className="p-3 border-t border-[var(--steel)]">
+          <button
+            onClick={logout}
+            className="flex items-center gap-3 px-3 py-2.5 w-full rounded-md text-sm text-[var(--mist)] hover:text-[var(--danger)] transition-colors"
+          >
+            <LogOut className="w-4 h-4" /> Logout
+          </button>
+        </div>
+      </aside>
+
+      {open && (
+        <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={() => setOpen(false)} />
+      )}
+
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="h-16 border-b border-[var(--steel)] px-6 flex items-center gap-4 bg-[var(--obsidian)] sticky top-0 z-30">
+          <button
+            className="lg:hidden text-[var(--mist)]"
+            onClick={() => setOpen(!open)}
+            aria-label="Toggle menu"
+          >
+            {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+          <div className="ml-auto flex items-center gap-2">
+            <span className="mono-label text-[var(--mist)] hidden sm:inline">AVAILABILITY</span>
+            {AVAIL.map((a) => (
+              <button
+                key={a}
+                onClick={() => setAvail(a)}
+                className={cn(
+                  'mono-label rounded-md px-2.5 py-1.5 border transition-colors',
+                  availability === a
+                    ? 'border-[var(--silver)] text-[var(--platinum)]'
+                    : 'border-[var(--steel)] text-[var(--mist)] hover:text-[var(--platinum)]'
+                )}
+              >
+                {a}
+              </button>
+            ))}
+          </div>
+        </header>
+        <main className="flex-1 p-6 lg:p-8">{children}</main>
       </div>
-      <Toaster />
-    </>
+    </div>
   );
 }

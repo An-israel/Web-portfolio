@@ -2,11 +2,8 @@
 
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 function LoginForm() {
   const router = useRouter();
@@ -22,19 +19,13 @@ function LoginForm() {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     const supabase = createClient();
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
     if (authError) {
-      setError(authError.message || 'Invalid credentials. Please try again.');
+      setError(authError.message || 'Invalid credentials.');
       setLoading(false);
       return;
     }
-
     router.push(next);
     router.refresh();
   }
@@ -42,69 +33,64 @@ function LoginForm() {
   return (
     <form
       onSubmit={handleLogin}
-      className="space-y-5 p-8 border border-[var(--line)] rounded-sm bg-[var(--bg-raised)]"
+      className="space-y-5 p-8 border border-[var(--steel)] rounded-md bg-[var(--graphite)]"
     >
       <div>
-        <Label htmlFor="email">Email</Label>
-        <Input
+        <label htmlFor="email" className="mono-label block mb-2">
+          Email
+        </label>
+        <input
           id="email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@swiftcreator.com"
           required
           autoComplete="email"
+          className="w-full rounded-md border border-[var(--steel)] bg-[var(--obsidian)] px-4 py-3 text-sm text-[var(--platinum)] focus:border-[var(--silver)] focus:outline-none"
         />
       </div>
       <div>
-        <Label htmlFor="password">Password</Label>
-        <Input
+        <label htmlFor="password" className="mono-label block mb-2">
+          Password
+        </label>
+        <input
           id="password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
           required
           autoComplete="current-password"
+          className="w-full rounded-md border border-[var(--steel)] bg-[var(--obsidian)] px-4 py-3 text-sm text-[var(--platinum)] focus:border-[var(--silver)] focus:outline-none"
         />
       </div>
 
       {error && (
-        <p className="text-sm text-red-400 bg-red-950/30 border border-red-800/30 rounded-sm px-4 py-3">
+        <p className="text-sm text-[var(--danger)] border border-[var(--danger)]/30 rounded-md px-4 py-3">
           {error}
         </p>
       )}
 
-      <Button
+      <button
         type="submit"
-        size="lg"
-        className="w-full font-heading text-xs tracking-widest uppercase"
         disabled={loading}
+        className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-[var(--white)] text-[var(--obsidian)] px-6 py-3.5 text-sm font-semibold disabled:opacity-60"
       >
-        {loading ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Signing in...
-          </>
-        ) : (
-          'Sign in'
-        )}
-      </Button>
+        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+        {loading ? 'Signing in…' : 'Sign in'}
+      </button>
     </form>
   );
 }
 
 export default function AdminLoginPage() {
   return (
-    <div className="min-h-screen bg-[var(--bg)] flex items-center justify-center px-6">
+    <div className="min-h-screen bg-[var(--obsidian)] flex items-center justify-center px-6">
       <div className="w-full max-w-sm">
         <div className="mb-10 text-center">
-          <p className="font-heading font-bold text-xl text-[var(--ink)]">
-            Swift<span className="text-[var(--gold)]">Creator</span>
-          </p>
-          <p className="mt-2 text-sm text-[var(--muted)]">Admin access</p>
+          <p className="mono-label text-[var(--platinum)]">ANIEKAN ISRAEL</p>
+          <p className="mt-2 mono-label text-[var(--mist)]">ADMIN ACCESS</p>
         </div>
-        <Suspense fallback={<div className="h-64 animate-pulse rounded-sm bg-[var(--bg-raised)]" />}>
+        <Suspense fallback={<div className="h-64 animate-pulse rounded-md bg-[var(--graphite)]" />}>
           <LoginForm />
         </Suspense>
       </div>
