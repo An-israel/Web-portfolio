@@ -72,16 +72,21 @@ export async function fetchSiteSettings(): Promise<SiteSettings> {
       const v = map.get(key);
       return v === undefined || v === null ? fallback : (v as T);
     };
+    // Optional URLs: empty string means "unset" → null.
+    const url = (key: string, fallback: string | null): string | null => {
+      const v = get<string | null>(key, fallback);
+      return v ? v : null;
+    };
 
     return {
       hero_headline: get('hero_headline', SEED_SETTINGS.hero_headline),
       hero_subline: get('hero_subline', SEED_SETTINGS.hero_subline),
       email: get('email', SEED_SETTINGS.email),
-      github_url: get<string | null>('github_url', SEED_SETTINGS.github_url),
-      x_url: get<string | null>('x_url', SEED_SETTINGS.x_url),
-      linkedin_url: get<string | null>('linkedin_url', SEED_SETTINGS.linkedin_url),
+      github_url: url('github_url', SEED_SETTINGS.github_url),
+      x_url: url('x_url', SEED_SETTINGS.x_url),
+      linkedin_url: url('linkedin_url', SEED_SETTINGS.linkedin_url),
       availability_status: get('availability_status', SEED_SETTINGS.availability_status),
-      resume_url: get<string | null>('resume_url', SEED_SETTINGS.resume_url),
+      resume_url: url('resume_url', SEED_SETTINGS.resume_url),
       stats: get('stats', SEED_SETTINGS.stats),
     };
   } catch {
