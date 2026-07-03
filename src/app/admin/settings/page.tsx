@@ -48,14 +48,16 @@ export default function SettingsAdmin() {
         return;
       }
     }
+    // Never send SQL NULL — site_settings.value is NOT NULL. Empty optional
+    // URLs are stored as '' and coerced back to null on read.
     const rows = [
       { key: 'hero_headline', value: str('hero_headline') },
       { key: 'hero_subline', value: str('hero_subline') },
       { key: 'email', value: str('email') },
-      { key: 'github_url', value: str('github_url') || null },
-      { key: 'x_url', value: str('x_url') || null },
-      { key: 'linkedin_url', value: str('linkedin_url') || null },
-      { key: 'resume_url', value: str('resume_url') || null },
+      { key: 'github_url', value: str('github_url') },
+      { key: 'x_url', value: str('x_url') },
+      { key: 'linkedin_url', value: str('linkedin_url') },
+      { key: 'resume_url', value: str('resume_url') },
       { key: 'stats', value: stats },
     ];
     const supabase = createClient();
