@@ -1,53 +1,68 @@
-'use client';
-
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { ArrowUpRight } from 'lucide-react';
-import { DeviceMockup } from './DeviceMockup';
-import type { Project } from '@/types';
+import { MonoLabel } from './MonoLabel';
+import type { WorkProject } from '@/types';
 
 interface ProjectCardProps {
-  project: Project;
+  project: WorkProject;
+  index?: number;
 }
 
-export function ProjectCard({ project }: ProjectCardProps) {
+export function ProjectCard({ project, index }: ProjectCardProps) {
   return (
-    <motion.div
-      whileHover={{ y: -4 }}
-      transition={{ duration: 0.25, ease: 'easeOut' }}
-      className="group"
+    <Link
+      href={`/work/${project.slug}`}
+      className="group block rounded-md border border-[var(--steel)] bg-[var(--graphite)] overflow-hidden transition-colors duration-300 hover:border-[var(--silver)]"
     >
-      <Link href={`/work/${project.slug}`} className="block">
-        {/* Mockup */}
-        <div className="mb-5 rounded-2xl overflow-hidden border border-[var(--line)] bg-[var(--bg-card)]">
-          <DeviceMockup
-            src={project.cover_image_url || ''}
-            alt={project.title}
-            device={project.cover_device || 'browser'}
-            animateOnView
+      {/* Cover — 16:9 */}
+      <div className="relative aspect-[16/9] overflow-hidden bg-[var(--obsidian)]">
+        {project.cover_image_url ? (
+          <Image
+            src={project.cover_image_url}
+            alt={`${project.title} — ${project.one_liner}`}
+            fill
+            sizes="(max-width: 768px) 100vw, 600px"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
           />
-        </div>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span
+              className="font-display text-[7rem] leading-none text-[var(--steel)] select-none transition-transform duration-500 group-hover:scale-[1.03]"
+              aria-hidden="true"
+            >
+              {project.title.charAt(0)}
+            </span>
+          </div>
+        )}
+        {typeof index === 'number' && (
+          <MonoLabel className="absolute top-4 left-4 text-[var(--mist)]">
+            {String(index + 1).padStart(2, '0')}
+          </MonoLabel>
+        )}
+      </div>
 
-        {/* Meta */}
-        <div className="flex items-start justify-between gap-4 px-1">
-          <div className="min-w-0">
-            <p className="text-xs text-[var(--muted)] font-heading uppercase tracking-widest mb-1.5">
-              {project.category}
-            </p>
-            <h3 className="font-heading font-semibold text-base text-[var(--ink)] group-hover:text-[var(--gold)] transition-colors leading-snug">
-              {project.title}
-            </h3>
-            {project.short_description && (
-              <p className="mt-1.5 text-xs text-[var(--muted)] line-clamp-2 leading-relaxed">
-                {project.short_description}
-              </p>
-            )}
-          </div>
-          <div className="w-8 h-8 rounded-full border border-[var(--line)] flex items-center justify-center shrink-0 mt-0.5 group-hover:border-[var(--gold)] transition-colors">
-            <ArrowUpRight className="w-3.5 h-3.5 text-[var(--muted)] group-hover:text-[var(--gold)] transition-colors" />
-          </div>
+      {/* Meta */}
+      <div className="p-6">
+        <div className="flex items-center justify-between gap-4">
+          <MonoLabel>{project.category}</MonoLabel>
+          <ArrowUpRight className="w-4 h-4 text-[var(--mist)] group-hover:text-[var(--silver)] transition-colors" />
         </div>
-      </Link>
-    </motion.div>
+        <h3 className="mt-3 font-display text-xl text-[var(--platinum)]">{project.title}</h3>
+        <p className="mt-2 text-sm text-[var(--mist)] leading-relaxed line-clamp-2">
+          {project.one_liner}
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {project.stack.slice(0, 3).map((tech) => (
+            <span
+              key={tech}
+              className="mono-label text-[10px] text-[var(--mist)] border border-[var(--steel)] rounded px-2 py-1"
+            >
+              {tech}
+            </span>
+          ))}
+        </div>
+      </div>
+    </Link>
   );
 }

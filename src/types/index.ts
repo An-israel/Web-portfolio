@@ -1,3 +1,108 @@
+// ============================================================
+// Aniekan Israel — personal portfolio types
+// ============================================================
+
+export type ProjectCategory = 'AI Product' | 'SaaS' | 'Platform';
+export type ProjectStatus = 'Live' | 'In Development' | 'Archived';
+
+export interface WorkProject {
+  id: string;
+  slug: string;
+  title: string;
+  category: ProjectCategory;
+  one_liner: string;
+  problem: string;
+  architecture: string;
+  build_notes: string;
+  outcome: string;
+  stack: string[];
+  role: string;
+  year: string;
+  status: ProjectStatus;
+  live_url: string | null;
+  github_url: string | null;
+  cover_image_url: string | null;
+  gallery_urls: string[];
+  featured: boolean;
+  sort_order: number;
+  published: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type InquiryProjectType =
+  | 'AI Product'
+  | 'Full-Stack Build'
+  | 'MVP / Zero-to-One'
+  | 'Consulting'
+  | 'Full-Time Role'
+  | 'Other';
+
+export type InquiryBudget =
+  | '<$2k'
+  | '$2k–$5k'
+  | '$5k–$15k'
+  | '$15k–$50k'
+  | '$50k+'
+  | 'Salary role';
+
+export type InquiryTimeline = 'ASAP' | '2–4 weeks' | '1–3 months' | 'Flexible';
+
+export type InquiryStatus =
+  | 'new'
+  | 'reviewing'
+  | 'replied'
+  | 'call_booked'
+  | 'won'
+  | 'lost'
+  | 'archived';
+
+export interface HireInquiry {
+  id: string;
+  full_name: string;
+  email: string;
+  company: string | null;
+  role_at_company: string | null;
+  project_type: InquiryProjectType;
+  budget_range: InquiryBudget | null;
+  timeline: InquiryTimeline | null;
+  description: string;
+  how_found: string | null;
+  attachments: string[];
+  status: InquiryStatus;
+  priority: 'high' | 'normal' | 'low';
+  internal_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type AvailabilityStatus = 'Available' | 'Limited' | 'Booked';
+
+export interface SiteStats {
+  products_shipped: string;
+  years_building: string;
+  stack_depth: string;
+  response_time: string;
+}
+
+export interface SiteSettings {
+  hero_headline: string;
+  hero_subline: string;
+  email: string;
+  github_url: string | null;
+  x_url: string | null;
+  linkedin_url: string | null;
+  availability_status: AvailabilityStatus;
+  resume_url: string | null;
+  stats: SiteStats;
+}
+
+// ============================================================
+// Legacy types — consumed only by the /admin subsystem and a
+// few dormant components pending the admin rebuild. Not used
+// by any public page. Kept so the project type-checks.
+// ============================================================
+
 export interface Project {
   id: string;
   title: string;

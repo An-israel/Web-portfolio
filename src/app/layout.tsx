@@ -1,58 +1,58 @@
 import type { Metadata } from 'next';
-import { Playfair_Display, Montserrat, Inter } from 'next/font/google';
+import { Inter, Inter_Tight, JetBrains_Mono } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
 
-const playfairDisplay = Playfair_Display({
-  variable: '--font-playfair-display',
+const interTight = Inter_Tight({
+  variable: '--font-inter-tight',
   subsets: ['latin'],
   display: 'swap',
-  weight: ['400', '500', '600', '700', '800', '900'],
-});
-
-const montserrat = Montserrat({
-  variable: '--font-montserrat',
-  subsets: ['latin'],
-  display: 'swap',
-  weight: ['300', '400', '500', '600', '700', '800'],
+  weight: ['400', '500', '600', '700'],
 });
 
 const inter = Inter({
   variable: '--font-inter',
   subsets: ['latin'],
   display: 'swap',
+  weight: ['400', '500', '600'],
 });
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: '--font-jetbrains-mono',
+  subsets: ['latin'],
+  display: 'swap',
+  weight: ['400', '500'],
+});
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://aniekanisrael.com';
 
 export const metadata: Metadata = {
   title: {
-    default: 'SwiftCreator — Websites That Make You Look Like the Leader',
-    template: '%s | SwiftCreator',
+    default: 'Aniekan Israel — Full-Stack & AI Engineer',
+    template: '%s — Aniekan Israel',
   },
   description:
-    'SwiftCreator builds high-performance websites for businesses that want to stand out — fast turnaround, premium design, real results.',
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || 'https://swiftcreator.com'
-  ),
+    'Full-stack & AI engineer and product builder in Lagos, working globally. I design, build, and ship AI products, multi-tenant SaaS, and autonomous tools — end to end.',
+  metadataBase: new URL(SITE_URL),
+  applicationName: 'Aniekan Israel',
+  authors: [{ name: 'Aniekan Israel' }],
+  creator: 'Aniekan Israel',
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: process.env.NEXT_PUBLIC_SITE_URL || 'https://swiftcreator.com',
-    siteName: 'SwiftCreator',
-    title: 'SwiftCreator — Websites That Make You Look Like the Leader',
+    url: SITE_URL,
+    siteName: 'Aniekan Israel',
+    title: 'Aniekan Israel — Full-Stack & AI Engineer',
     description:
-      'SwiftCreator builds high-performance websites for businesses that want to stand out.',
+      'I build AI products that ship. Founder-level engineer — multi-tenant SaaS, AI content systems, and autonomous tools, built end to end.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SwiftCreator — Websites That Make You Look Like the Leader',
-    description:
-      'SwiftCreator builds high-performance websites for businesses that want to stand out.',
+    title: 'Aniekan Israel — Full-Stack & AI Engineer',
+    description: 'I build AI products that ship. Founder-level engineer, Lagos / remote.',
   },
-  robots: {
-    index: true,
-    follow: true,
-  },
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({
@@ -63,9 +63,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${playfairDisplay.variable} ${montserrat.variable} ${inter.variable} h-full antialiased`}
+      className={`${interTight.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-[var(--bg)] text-[var(--ink)]">
+      <body className="min-h-full flex flex-col bg-[var(--obsidian)] text-[var(--mist)]">
         {children}
         <Analytics />
         <SpeedInsights />

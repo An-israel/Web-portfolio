@@ -1,37 +1,65 @@
 @import "tailwindcss";
 
-:root {
-  --bg: #080808;
-  --bg-raised: #111111;
-  --bg-card: #161616;
-  --gold: #C9A84C;
-  --gold-soft: #E4C97A;
-  --ink: #FFFFFF;
-  --muted: #888888;
-  --warm: #F5F5F5;
-  --line: #1e1e1e;
+/* ============================================================
+   ANIEKAN ISRAEL — "Obsidian & Sterling" design system
+   ============================================================ */
 
-  /* Legacy compat aliases */
-  --background: var(--bg);
-  --foreground: var(--ink);
+:root {
+  /* Surfaces */
+  --obsidian: #060607;   /* primary background */
+  --graphite: #101114;   /* raised surfaces, cards */
+  --steel: #1c1e22;      /* borders, dividers, input bg */
+
+  /* Metal + text */
+  --silver: #c7cbd1;     /* metallic accent (sparingly) */
+  --platinum: #edeff2;   /* headings, high-emphasis */
+  --white: #ffffff;      /* reserved for the single most important element */
+  --mist: #8a8f98;       /* secondary / body text */
+
+  /* Functional (admin only) */
+  --success: #3ddc97;
+  --warning: #f5b84c;
+  --danger: #f0564a;
+
+  /* Legacy aliases so any un-migrated component still resolves */
+  --bg: var(--obsidian);
+  --bg-raised: var(--graphite);
+  --bg-card: var(--graphite);
+  --ink: var(--platinum);
+  --muted: var(--mist);
+  --line: var(--steel);
+  --gold: var(--silver);
+  --gold-soft: var(--platinum);
+  --background: var(--obsidian);
+  --foreground: var(--platinum);
 }
 
 @theme inline {
-  --color-bg: var(--bg);
-  --color-bg-raised: var(--bg-raised);
-  --color-bg-card: var(--bg-card);
-  --color-gold: var(--gold);
-  --color-gold-soft: var(--gold-soft);
-  --color-ink: var(--ink);
-  --color-muted: var(--muted);
-  --color-warm: var(--warm);
-  --color-line: var(--line);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-obsidian: var(--obsidian);
+  --color-graphite: var(--graphite);
+  --color-steel: var(--steel);
+  --color-silver: var(--silver);
+  --color-platinum: var(--platinum);
+  --color-white: var(--white);
+  --color-mist: var(--mist);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
 
-  --font-playfair: var(--font-playfair-display);
-  --font-montserrat: var(--font-montserrat);
-  --font-inter: var(--font-inter);
+  /* legacy */
+  --color-bg: var(--obsidian);
+  --color-bg-raised: var(--graphite);
+  --color-bg-card: var(--graphite);
+  --color-ink: var(--platinum);
+  --color-muted: var(--mist);
+  --color-line: var(--steel);
+  --color-gold: var(--silver);
+  --color-background: var(--obsidian);
+  --color-foreground: var(--platinum);
+
+  --font-display: var(--font-inter-tight);
+  --font-body: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
   --font-sans: var(--font-inter);
 }
 
@@ -43,119 +71,147 @@
 
 html {
   scroll-behavior: smooth;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background-color: var(--bg);
-  color: var(--ink);
+  background-color: var(--obsidian);
+  color: var(--mist);
   font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  line-height: 1.6;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: var(--bg);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--line);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--muted);
+/* Headings default to the display grotesk */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-inter-tight), var(--font-inter), system-ui, sans-serif;
+  color: var(--platinum);
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  line-height: 1.05;
 }
 
-/* Selection */
-::selection {
-  background: var(--ink);
-  color: var(--bg);
-}
-
-/* Focus styles */
-:focus-visible {
-  outline: 2px solid var(--gold);
-  outline-offset: 2px;
-}
-
-/* Typography utilities */
+/* ---------- Typography utilities ---------- */
 .font-display {
-  font-family: var(--font-playfair-display), Georgia, serif;
+  font-family: var(--font-inter-tight), var(--font-inter), system-ui, sans-serif;
+  letter-spacing: -0.02em;
 }
-
-.font-heading {
-  font-family: var(--font-montserrat), system-ui, sans-serif;
-}
-
 .font-body {
   font-family: var(--font-inter), system-ui, sans-serif;
 }
-
-/* Section badge pill */
-.section-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.3rem 0.875rem;
-  border-radius: 9999px;
-  border: 1px solid var(--line);
-  background: var(--bg-card);
-  font-family: var(--font-montserrat), system-ui, sans-serif;
-  font-size: 0.6875rem;
-  font-weight: 500;
-  color: var(--muted);
-  letter-spacing: 0.04em;
+.font-mono {
+  font-family: var(--font-jetbrains-mono), ui-monospace, "SFMono-Regular", monospace;
 }
 
-/* Micro label style (legacy) */
-.label-micro {
-  font-family: var(--font-montserrat), system-ui, sans-serif;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.15em;
+/* Mono eyebrow / label / metadata — part of the identity */
+.mono-label {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;      /* ~11px */
+  line-height: 1.4;
   text-transform: uppercase;
-  color: var(--muted);
+  letter-spacing: 0.12em;
+  color: var(--silver);
 }
 
-/* Divider line */
-.line-divider {
-  border-color: var(--line);
+/* Faint metallic sheen on a headline word */
+.metal-text {
+  background: linear-gradient(180deg, #edeff2 0%, #a9aeb6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
-/* Prose reset for admin-authored content */
-.prose-admin {
-  color: var(--muted);
-  line-height: 1.8;
+/* ---------- Signature: system-status pulse line ---------- */
+.pulse-wrap {
+  position: relative;
+  width: 100%;
+  height: 40px;
+  overflow: hidden;
+  opacity: 0.4;
+  color: var(--silver);
 }
-.prose-admin h2,
-.prose-admin h3 {
-  color: var(--ink);
-  font-family: var(--font-montserrat), system-ui, sans-serif;
-  font-weight: 600;
+.pulse-wrap svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.pulse-trace {
+  stroke: currentColor;
+  stroke-width: 1;
+  fill: none;
+  stroke-dasharray: 1400;
+  stroke-dashoffset: 1400;
+  animation: pulse-sweep 3.2s linear infinite;
+}
+@keyframes pulse-sweep {
+  0%   { stroke-dashoffset: 1400; }
+  60%  { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -1400; }
+}
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--silver);
+  box-shadow: 0 0 0 0 rgba(199, 203, 209, 0.5);
+  animation: dot-pulse 2s ease-out infinite;
+}
+@keyframes dot-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(199, 203, 209, 0.45); }
+  70%  { box-shadow: 0 0 0 7px rgba(199, 203, 209, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(199, 203, 209, 0); }
+}
+
+/* Reveal-on-scroll baseline (JS toggles .is-visible) */
+.reveal {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  will-change: opacity, transform;
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--obsidian); }
+::-webkit-scrollbar-thumb { background: var(--steel); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--mist); }
+
+/* Selection */
+::selection { background: var(--platinum); color: var(--obsidian); }
+
+/* Focus — silver outline, always visible for keyboard */
+:focus-visible {
+  outline: 2px solid var(--silver);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Prose for admin-authored case-study content */
+.prose-obsidian { color: var(--mist); line-height: 1.8; max-width: 65ch; }
+.prose-obsidian h2,
+.prose-obsidian h3 {
+  color: var(--platinum);
+  font-family: var(--font-inter-tight), sans-serif;
   margin-top: 2rem;
   margin-bottom: 0.75rem;
 }
-.prose-admin p {
-  margin-bottom: 1rem;
-}
-.prose-admin ul {
-  list-style: disc;
-  padding-left: 1.5rem;
-  margin-bottom: 1rem;
-}
-.prose-admin li {
-  margin-bottom: 0.25rem;
-}
-.prose-admin a {
-  color: var(--gold);
-  text-decoration: underline;
+.prose-obsidian p { margin-bottom: 1rem; }
+.prose-obsidian a { color: var(--silver); text-decoration: underline; }
+
+/* ---------- Reduced motion: disable all non-essential animation ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .pulse-trace { stroke-dashoffset: 0; }
+  .reveal { opacity: 1; transform: none; }
 }

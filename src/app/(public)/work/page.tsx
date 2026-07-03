@@ -1,158 +1,79 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { SectionHeading } from '@/components/site/SectionHeading';
+import { useState } from 'react';
+import { MonoLabel } from '@/components/site/MonoLabel';
+import { Reveal } from '@/components/site/Reveal';
 import { ProjectCard } from '@/components/site/ProjectCard';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { createClient } from '@/lib/supabase/client';
-import type { Project } from '@/types';
+import { getAllProjects } from '@/lib/data/site';
+import { cn } from '@/lib/utils';
+import type { ProjectCategory } from '@/types';
 
-const PLACEHOLDER_PROJECTS: Project[] = [
-  {
-    id: '1',
-    title: 'Horizon Real Estate',
-    slug: 'horizon-real-estate',
-    category: 'Business Website',
-    short_description: 'A property listing platform that positions Horizon as the market authority.',
-    full_description: null,
-    cover_image_url: null,
-    cover_device: 'browser',
-    gallery: null,
-    tech_stack: ['Next.js', 'Supabase'],
-    live_url: null,
-    is_published: true,
-    is_featured: true,
-    sort_order: 0,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    title: 'Lagos Bites',
-    slug: 'lagos-bites',
-    category: 'E-commerce',
-    short_description: 'Online food ordering with real-time tracking.',
-    full_description: null,
-    cover_image_url: null,
-    cover_device: 'browser',
-    gallery: null,
-    tech_stack: ['Next.js', 'Stripe'],
-    live_url: null,
-    is_published: true,
-    is_featured: false,
-    sort_order: 1,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    title: 'Clarity Consulting',
-    slug: 'clarity-consulting',
-    category: 'Business Website',
-    short_description: 'Brand positioning site for a management consulting firm.',
-    full_description: null,
-    cover_image_url: null,
-    cover_device: 'laptop',
-    gallery: null,
-    tech_stack: ['Next.js', 'Framer Motion'],
-    live_url: null,
-    is_published: true,
-    is_featured: false,
-    sort_order: 2,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '4',
-    title: 'Lumina Skincare',
-    slug: 'lumina-skincare',
-    category: 'Landing Page',
-    short_description: 'High-converting product launch page.',
-    full_description: null,
-    cover_image_url: null,
-    cover_device: 'phone',
-    gallery: null,
-    tech_stack: ['Next.js', 'Tailwind CSS'],
-    live_url: null,
-    is_published: true,
-    is_featured: false,
-    sort_order: 3,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
+const FILTERS: { label: string; value: ProjectCategory | 'All' }[] = [
+  { label: 'All', value: 'All' },
+  { label: 'AI Products', value: 'AI Product' },
+  { label: 'SaaS', value: 'SaaS' },
+  { label: 'Platforms', value: 'Platform' },
 ];
 
-export default function WorkPage() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [activeCategory, setActiveCategory] = useState('All');
-
-  useEffect(() => {
-    async function fetchProjects() {
-      try {
-        const supabase = createClient();
-        const { data } = await supabase
-          .from('projects')
-          .select('*')
-          .eq('is_published', true)
-          .order('sort_order');
-
-        if (data && data.length > 0) {
-          setProjects(data as unknown as Project[]);
-        } else {
-          setProjects(PLACEHOLDER_PROJECTS);
-        }
-      } catch {
-        setProjects(PLACEHOLDER_PROJECTS);
-      }
-    }
-    fetchProjects();
-  }, []);
-
-  const categories = ['All', ...Array.from(new Set(projects.map((p) => p.category)))];
+export default function WorkIndexPage() {
+  const projects = getAllProjects();
+  const [active, setActive] = useState<ProjectCategory | 'All'>('All');
 
   const filtered =
-    activeCategory === 'All'
-      ? projects
-      : projects.filter((p) => p.category === activeCategory);
+    active === 'All' ? projects : projects.filter((p) => p.category === active);
 
   return (
-    <div className="max-w-7xl mx-auto px-6 lg:px-8 py-20 md:py-28">
-      <SectionHeading
-        eyebrow="Portfolio"
-        title="Work that earns its place on the wall."
-        subtitle="Each project is built with a single purpose: to make the client the most credible option in their market."
-        className="mb-14 max-w-2xl"
-      />
+    <>
+      {/* Hero band */}
+      <section className="border-b border-[var(--steel)]">
+        <div className="max-w-[1200px] mx-auto px-6 lg:px-8 pt-36 pb-16">
+          <Reveal>
+            <MonoLabel>THE WORK</MonoLabel>
+            <h1 className="mt-5 font-display text-5xl sm:text-6xl text-[var(--platinum)]">
+              Products, not promises.
+            </h1>
+            <p className="mt-6 text-lg text-[var(--mist)] max-w-2xl">
+              Everything below is real, built end-to-end by me.
+            </p>
+          </Reveal>
+        </div>
+      </section>
 
-      <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-        <TabsList className="mb-12">
-          {categories.map((cat) => (
-            <TabsTrigger key={cat} value={cat}>
-              {cat}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        <TabsContent value={activeCategory}>
-          {filtered.length === 0 ? (
-            <div className="text-center py-20 text-[var(--muted)]">
-              <p>No projects in this category yet.</p>
-            </div>
-          ) : (
-            <motion.div
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
+      {/* Filter row */}
+      <div className="border-b border-[var(--steel)] sticky top-16 z-30 bg-[var(--obsidian)]/80 backdrop-blur-md">
+        <div className="max-w-[1200px] mx-auto px-6 lg:px-8 py-4 flex flex-wrap gap-2">
+          {FILTERS.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setActive(f.value)}
+              className={cn(
+                'mono-label rounded-md px-3 py-2 border transition-colors',
+                active === f.value
+                  ? 'border-[var(--silver)] text-[var(--platinum)]'
+                  : 'border-[var(--steel)] text-[var(--mist)] hover:text-[var(--platinum)]'
+              )}
             >
-              {filtered.map((project) => (
-                <ProjectCard key={project.id} project={project} />
-              ))}
-            </motion.div>
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Grid */}
+      <section>
+        <div className="max-w-[1200px] mx-auto px-6 lg:px-8 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {filtered.map((project, i) => (
+              <Reveal key={project.id} delay={(i % 2) * 80}>
+                <ProjectCard project={project} />
+              </Reveal>
+            ))}
+          </div>
+          {filtered.length === 0 && (
+            <p className="text-center text-[var(--mist)] py-16">Nothing here yet.</p>
           )}
-        </TabsContent>
-      </Tabs>
-    </div>
+        </div>
+      </section>
+    </>
   );
 }

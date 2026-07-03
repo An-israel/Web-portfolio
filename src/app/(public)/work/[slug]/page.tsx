@@ -1,162 +1,184 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, ExternalLink } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
-import { DeviceMockup } from '@/components/site/DeviceMockup';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { SectionHeading } from '@/components/site/SectionHeading';
-import { CaseStudyCTA } from './CaseStudyCTA';
-import type { Project, GalleryImage } from '@/types';
+import Image from 'next/image';
+import { ArrowLeft, ArrowRight, ExternalLink } from 'lucide-react';
+import { MonoLabel } from '@/components/site/MonoLabel';
+import { getAllProjects, getProjectBySlug } from '@/lib/data/site';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-async function getProject(slug: string): Promise<Project | null> {
-  try {
-    const supabase = await createClient();
-    const { data } = await supabase
-      .from('projects')
-      .select('*')
-      .eq('slug', slug)
-      .eq('is_published', true)
-      .single();
-
-    return data as unknown as Project | null;
-  } catch {
-    return null;
-  }
-}
-
-export async function generateStaticParams() {
-  try {
-    const supabase = await createClient();
-    const { data } = await supabase
-      .from('projects')
-      .select('slug')
-      .eq('is_published', true);
-
-    return (data || []).map((p: { slug: string }) => ({ slug: p.slug }));
-  } catch {
-    return [];
-  }
+export function generateStaticParams() {
+  return getAllProjects().map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const project = await getProject(slug);
-
-  if (!project) {
-    return { title: 'Project Not Found' };
-  }
-
+  const project = getProjectBySlug(slug);
+  if (!project) return { title: 'Not found' };
   return {
     title: project.title,
-    description: project.short_description || undefined,
+    description: project.one_liner,
     openGraph: {
-      title: project.title,
-      description: project.short_description || undefined,
+      title: `${project.title} — Aniekan Israel`,
+      description: project.one_liner,
       images: project.cover_image_url ? [project.cover_image_url] : undefined,
     },
   };
 }
 
+function Section({
+  label,
+  title,
+  children,
+}: {
+  label: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="border-t border-[var(--steel)] py-14">
+      <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-8">
+        <div>
+          <MonoLabel>{label}</MonoLabel>
+          <h2 className="mt-3 font-display text-2xl text-[var(--platinum)]">{title}</h2>
+        </div>
+        <div className="prose-obsidian text-[var(--mist)]">{children}</div>
+      </div>
+    </section>
+  );
+}
+
 export default async function CaseStudyPage({ params }: PageProps) {
   const { slug } = await params;
-  const project = await getProject(slug);
+  const project = getProjectBySlug(slug);
+  if (!project) notFound();
 
-  if (!project) {
-    notFound();
-  }
-
-  const gallery = (project.gallery as unknown as GalleryImage[] | null) || [];
+  const all = getAllProjects();
+  const idx = all.findIndex((p) => p.slug === project.slug);
+  const prev = idx > 0 ? all[idx - 1] : all[all.length - 1];
+  const next = idx < all.length - 1 ? all[idx + 1] : all[0];
 
   return (
-    <article className="max-w-7xl mx-auto px-6 lg:px-8 py-20 md:py-28">
-      {/* Back */}
+    <article className="max-w-[1000px] mx-auto px-6 lg:px-8 pt-32 pb-24">
+      {/* Breadcrumb */}
       <Link
         href="/work"
-        className="inline-flex items-center gap-2 text-sm text-[var(--muted)] hover:text-[var(--ink)] transition-colors mb-12 group"
+        className="group inline-flex items-center gap-2 mono-label text-[var(--mist)] hover:text-[var(--platinum)] transition-colors"
       >
-        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-        All work
+        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+        WORK / {project.title.toUpperCase()}
       </Link>
 
-      {/* Hero */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start mb-20">
-        <div>
-          <p className="label-micro mb-4">{project.category}</p>
-          <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-[var(--ink)] leading-tight mb-6">
-            {project.title}
-          </h1>
-          {project.short_description && (
-            <p className="text-lg text-[var(--muted)] leading-relaxed mb-8">
-              {project.short_description}
-            </p>
-          )}
-          {project.tech_stack && project.tech_stack.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-8">
-              {project.tech_stack.map((tech) => (
-                <Badge key={tech} variant="default">
-                  {tech}
-                </Badge>
-              ))}
-            </div>
-          )}
-          {project.live_url && (
-            <Button variant="outline" asChild className="font-heading text-xs tracking-widest uppercase">
-              <a href={project.live_url} target="_blank" rel="noopener noreferrer">
-                Visit live site <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </Button>
-          )}
-        </div>
-        <DeviceMockup
-          src={project.cover_image_url || ''}
-          alt={project.title}
-          device={project.cover_device || 'browser'}
-          animateOnView
-        />
+      {/* Title + description */}
+      <h1 className="mt-8 font-display text-5xl sm:text-6xl text-[var(--platinum)]">
+        {project.title}
+      </h1>
+      <p className="mt-5 text-lg text-[var(--mist)] max-w-2xl">{project.one_liner}</p>
+
+      {/* Meta row */}
+      <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+        <MonoLabel>ROLE — {project.role.toUpperCase()}</MonoLabel>
+        <span className="h-3 w-px bg-[var(--steel)] hidden sm:block" />
+        <MonoLabel>YEAR — {project.year}</MonoLabel>
+        <span className="h-3 w-px bg-[var(--steel)] hidden sm:block" />
+        <MonoLabel>STATUS — {project.status.toUpperCase()}</MonoLabel>
+        {project.live_url && (
+          <a
+            href={project.live_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 mono-label text-[var(--white)] hover:text-[var(--silver)] transition-colors"
+          >
+            VISIT LIVE <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        )}
       </div>
 
-      {/* Full description — admin-authored content, safe to render */}
-      {project.full_description && (
-        <section className="mb-20 max-w-3xl">
-          <SectionHeading eyebrow="Case study" title="The full story." className="mb-10" />
-          {/*
-            Admin-authored content rendered as simple paragraphs.
-            This content is written by Aniekan (admin) only — not user-generated.
-          */}
-          <div className="prose-admin">
-            {project.full_description.split('\n\n').map((para, i) => (
-              <p key={i}>{para}</p>
+      {/* Hero frame */}
+      <div className="mt-12 relative aspect-[16/9] rounded-md border border-[var(--steel)] bg-[var(--graphite)] overflow-hidden">
+        {project.cover_image_url ? (
+          <Image
+            src={project.cover_image_url}
+            alt={`${project.title} — ${project.one_liner}`}
+            fill
+            sizes="1000px"
+            className="object-cover"
+            priority
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="font-display text-[10rem] leading-none text-[var(--steel)] select-none">
+              {project.title.charAt(0)}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Body */}
+      <div className="mt-16">
+        <Section label="THE PROBLEM" title="Why it needed to exist.">
+          <p>{project.problem}</p>
+        </Section>
+
+        <Section label="THE ARCHITECTURE" title="How it's built.">
+          <p>{project.architecture}</p>
+        </Section>
+
+        <Section label="THE BUILD" title="The hard parts.">
+          <p>{project.build_notes}</p>
+        </Section>
+
+        <Section label="THE OUTCOME" title="What shipped.">
+          <p>{project.outcome}</p>
+        </Section>
+
+        {/* Stack */}
+        <section className="border-t border-[var(--steel)] py-14">
+          <MonoLabel>STACK</MonoLabel>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {project.stack.map((tech) => (
+              <span
+                key={tech}
+                className="mono-label text-[var(--mist)] border border-[var(--steel)] rounded px-3 py-1.5"
+              >
+                {tech}
+              </span>
             ))}
           </div>
         </section>
-      )}
+      </div>
 
-      {/* Gallery */}
-      {gallery.length > 0 && (
-        <section className="mb-20">
-          <SectionHeading eyebrow="Gallery" title="More screens." className="mb-10" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {gallery.map((img, i) => (
-              <DeviceMockup
-                key={i}
-                src={img.url}
-                alt={img.alt}
-                device={img.device || 'browser'}
-                animateOnView
-              />
-            ))}
-          </div>
-        </section>
-      )}
+      {/* Prev / Next */}
+      <nav className="border-t border-[var(--steel)] pt-10 grid grid-cols-2 gap-6">
+        <Link href={`/work/${prev.slug}`} className="group">
+          <MonoLabel className="text-[var(--mist)]">← PREVIOUS</MonoLabel>
+          <p className="mt-2 font-display text-lg text-[var(--platinum)] group-hover:text-[var(--white)] transition-colors">
+            {prev.title}
+          </p>
+        </Link>
+        <Link href={`/work/${next.slug}`} className="group text-right">
+          <MonoLabel className="text-[var(--mist)]">NEXT →</MonoLabel>
+          <p className="mt-2 font-display text-lg text-[var(--platinum)] group-hover:text-[var(--white)] transition-colors">
+            {next.title}
+          </p>
+        </Link>
+      </nav>
 
-      {/* CTA */}
-      <CaseStudyCTA projectTitle={project.title} />
+      {/* Hire CTA */}
+      <div className="mt-16 rounded-md border border-[var(--steel)] bg-[var(--graphite)] p-10 text-center">
+        <h2 className="font-display text-2xl sm:text-3xl text-[var(--platinum)]">
+          Want something like this?
+        </h2>
+        <Link
+          href="/hire"
+          className="mt-6 inline-flex items-center gap-2 rounded-md border border-[var(--silver)] px-6 py-3.5 text-sm font-medium text-[var(--white)] hover:bg-[var(--white)] hover:text-[var(--obsidian)] transition-colors"
+        >
+          Hire me <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
     </article>
   );
 }
