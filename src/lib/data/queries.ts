@@ -6,7 +6,7 @@ import {
   getFeaturedProjects as seedFeatured,
   getProjectBySlug as seedBySlug,
 } from '@/lib/data/site';
-import type { WorkProject, SiteSettings, Testimonial } from '@/types';
+import type { WorkProject, SiteSettings, Testimonial, Design } from '@/types';
 
 // ------------------------------------------------------------
 // Server-side reads. Every function falls back to the seeded
@@ -115,4 +115,37 @@ export async function fetchTestimonials(): Promise<Testimonial[]> {
 
 export function allProjectSlugs(): { slug: string }[] {
   return SEED_PROJECTS.map((p) => ({ slug: p.slug }));
+}
+
+// ---------- Designs ----------
+export async function fetchDesigns(): Promise<Design[]> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('designs')
+      .select('*')
+      .eq('published', true)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false });
+    if (error || !data) return [];
+    return data as unknown as Design[];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchDesignBySlug(slug: string): Promise<Design | null> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('designs')
+      .select('*')
+      .eq('slug', slug)
+      .eq('published', true)
+      .maybeSingle();
+    if (error || !data) return null;
+    return data as unknown as Design;
+  } catch {
+    return null;
+  }
 }

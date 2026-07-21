@@ -34,6 +34,10 @@ export default async function HomePage() {
   ];
 
   const sameAs = [settings.github_url, settings.x_url, settings.linkedin_url].filter(Boolean);
+  // Headline is editable in admin Settings; accent the last word.
+  const headWords = settings.hero_headline.trim().split(' ');
+  const headLast = headWords.length > 1 ? headWords.pop() : '';
+  const headLead = headWords.join(' ');
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Person',
@@ -61,7 +65,7 @@ export default async function HomePage() {
 
             <Reveal delay={80}>
               <h1 className="mt-6 font-display text-5xl sm:text-6xl lg:text-7xl text-[var(--platinum)]">
-                I build AI products that <span className="metal-text">ship</span>.
+                {headLead} {headLast && <span className="metal-text">{headLast}</span>}
               </h1>
             </Reveal>
 

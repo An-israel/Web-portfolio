@@ -85,6 +85,26 @@ type ProfileRow = {
   created_at: string;
 };
 
+type DesignRow = {
+  id: string;
+  slug: string;
+  title: string;
+  category: string;
+  summary: string | null;
+  story: string | null;
+  dimensions: string | null;
+  tools: string[];
+  client: string | null;
+  year: string | null;
+  cover_image_url: string | null;
+  gallery_urls: string[];
+  featured: boolean;
+  sort_order: number;
+  published: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 type WithDefaults<T, Optional extends keyof T> = Omit<T, Optional> &
   Partial<Pick<T, Optional>>;
 
@@ -169,6 +189,29 @@ export type Database = {
         Row: ProfileRow;
         Insert: WithDefaults<ProfileRow, 'email' | 'is_admin' | 'created_at'>;
         Update: Partial<ProfileRow>;
+        Relationships: [];
+      };
+      designs: {
+        Row: DesignRow;
+        Insert: WithDefaults<
+          DesignRow,
+          | 'id'
+          | 'category'
+          | 'summary'
+          | 'story'
+          | 'dimensions'
+          | 'tools'
+          | 'client'
+          | 'year'
+          | 'cover_image_url'
+          | 'gallery_urls'
+          | 'featured'
+          | 'sort_order'
+          | 'published'
+          | 'created_at'
+          | 'updated_at'
+        >;
+        Update: Partial<DesignRow>;
         Relationships: [];
       };
     };
