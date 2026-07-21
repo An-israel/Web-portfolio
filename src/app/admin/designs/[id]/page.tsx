@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, X } from 'lucide-react';
+import { ArrowLeft, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { MonoLabel } from '@/components/site/MonoLabel';
 import type { Design, DesignCategory } from '@/types';
@@ -109,6 +109,14 @@ export default function DesignEditor({ params }: { params: Promise<{ id: string 
 
   function removeGallery(url: string) {
     set('gallery_urls', (d.gallery_urls || []).filter((u) => u !== url));
+  }
+
+  function moveGallery(index: number, dir: -1 | 1) {
+    const arr = [...(d.gallery_urls || [])];
+    const target = index + dir;
+    if (target < 0 || target >= arr.length) return;
+    [arr[index], arr[target]] = [arr[target], arr[index]];
+    set('gallery_urls', arr);
   }
 
   async function save() {
@@ -232,11 +240,15 @@ export default function DesignEditor({ params }: { params: Promise<{ id: string 
         <Row label="Gallery images">
           <div className="space-y-3">
             {(d.gallery_urls || []).length > 0 && (
+              <>
               <div className="grid grid-cols-3 gap-2">
-                {(d.gallery_urls || []).map((url) => (
+                {(d.gallery_urls || []).map((url, i) => (
                   <div key={url} className="relative group">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={url} alt="" className="w-full h-24 object-cover rounded-md border border-[var(--steel)]" />
+                    <span className="absolute top-1 left-1 mono-label bg-[var(--obsidian)]/80 rounded px-1.5 py-0.5 text-[var(--platinum)]">
+                      {i + 1}
+                    </span>
                     <button
                       onClick={() => removeGallery(url)}
                       className="absolute top-1 right-1 bg-[var(--obsidian)]/80 rounded-full p-1 text-[var(--mist)] hover:text-[var(--danger)]"
@@ -244,9 +256,31 @@ export default function DesignEditor({ params }: { params: Promise<{ id: string 
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
+                    <div className="absolute bottom-1 inset-x-1 flex justify-between">
+                      <button
+                        onClick={() => moveGallery(i, -1)}
+                        disabled={i === 0}
+                        aria-label="Move earlier"
+                        className="bg-[var(--obsidian)]/80 rounded p-1 text-[var(--platinum)] hover:text-[var(--white)] disabled:opacity-30"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => moveGallery(i, 1)}
+                        disabled={i === (d.gallery_urls || []).length - 1}
+                        aria-label="Move later"
+                        className="bg-[var(--obsidian)]/80 rounded p-1 text-[var(--platinum)] hover:text-[var(--white)] disabled:opacity-30"
+                      >
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
+              <p className="text-xs text-[var(--mist)]">
+                #1 is the first gallery image shown. Reorder with the arrows, then Save changes.
+              </p>
+              </>
             )}
             <input
               type="file"
