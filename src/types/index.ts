@@ -30,6 +30,36 @@ export interface WorkProject {
   updated_at?: string;
 }
 
+// ---------- Designs (visual / graphic-design portfolio) ----------
+export type DesignCategory =
+  | 'Brand Identity'
+  | 'Poster'
+  | 'Social Media'
+  | 'UI/UX'
+  | 'Logo'
+  | 'Illustration'
+  | 'Other';
+
+export interface Design {
+  id: string;
+  slug: string;
+  title: string;
+  category: string;
+  summary: string | null;
+  story: string | null;
+  dimensions: string | null;
+  tools: string[];
+  client: string | null;
+  year: string | null;
+  cover_image_url: string | null;
+  gallery_urls: string[];
+  featured: boolean;
+  sort_order: number;
+  published: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export type InquiryProjectType =
   | 'AI Product'
   | 'Full-Stack Build'
