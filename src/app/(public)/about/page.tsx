@@ -8,44 +8,29 @@ import { fetchSiteSettings } from '@/lib/data/queries';
 export const metadata: Metadata = {
   title: 'About',
   description:
-    'Self-taught, systems-obsessed full-stack & AI engineer. Started on a phone in Nigeria; now shipping production software — multi-tenant SaaS, AI pipelines, and tools used by real people.',
+    'Aniekan Israel — a self-taught designer and engineer shipping production software and design work end to end. Multi-tenant SaaS, AI pipelines, brand systems, and interfaces used by real people.',
 };
-
-const STORY = [
-  {
-    label: 'ORIGIN',
-    body: 'Started designing on a phone in Nigeria. No bootcamp, no CS degree handed down — just relentless building, one project at a time.',
-  },
-  {
-    label: 'THE SHIFT',
-    body: 'Moved from design and video into engineering: learned full-stack development and AI systems by shipping real products — including a stretch building through power outages in 2024.',
-  },
-  {
-    label: 'NOW',
-    body: 'Final-year student at the University of Nigeria running production software: multi-tenant SaaS, AI pipelines, and tools used by real people. I don’t collect tutorials. I collect launches.',
-  },
-];
 
 const PRINCIPLES = [
   {
     title: 'Architecture first',
-    body: 'Decisions about data, security, and structure come before the first component. It’s cheaper to think than to rewrite.',
+    body: 'Decisions about data, security, and structure come before the first pixel or component. It’s cheaper to think than to rewrite.',
+  },
+  {
+    title: 'Design and code are one craft',
+    body: 'I don’t hand a design off to an engineer — I’m both. The interface and the data model get decided together, so the product feels whole.',
   },
   {
     title: 'Ship, then sharpen',
     body: 'A live product teaches more than a perfect plan. I get it real, then refine against reality.',
   },
-  {
-    title: 'Own the whole stack',
-    body: 'Design, frontend, backend, infra. When one person holds the whole picture, nothing falls through the seams.',
-  },
 ];
 
 const TOOLBOX: { group: string; items: string[] }[] = [
+  { group: 'Design', items: ['Figma', 'Brand Identity', 'UI/UX', 'Typography', 'Social / Print'] },
   { group: 'Frontend', items: ['React', 'Next.js', 'TypeScript', 'Tailwind'] },
   { group: 'Backend', items: ['Supabase', 'PostgreSQL', 'Node', 'Edge Functions', 'RLS'] },
-  { group: 'AI', items: ['LLM APIs', 'Prompt systems', 'Agent orchestration', 'TTS / image pipelines'] },
-  { group: 'Ops', items: ['Vercel', 'Git', 'CI'] },
+  { group: 'AI', items: ['LLM APIs', 'Prompt systems', 'Agent orchestration', 'Image pipelines'] },
 ];
 
 const TIMELINE = [
@@ -57,6 +42,7 @@ const TIMELINE = [
 
 export default async function AboutPage() {
   const settings = await fetchSiteSettings();
+  const paragraphs = settings.about_story.split('\n').filter((p) => p.trim().length > 0);
 
   return (
     <>
@@ -66,8 +52,11 @@ export default async function AboutPage() {
           <Reveal>
             <MonoLabel>ABOUT</MonoLabel>
             <h1 className="mt-5 font-display text-4xl sm:text-5xl lg:text-6xl text-[var(--platinum)] max-w-4xl">
-              Self-taught. Systems-obsessed. Shipping since day one.
+              {settings.about_headline}
             </h1>
+            <p className="mt-6 text-lg text-[var(--mist)] leading-relaxed max-w-2xl">
+              {settings.about_intro}
+            </p>
           </Reveal>
         </div>
       </section>
@@ -78,21 +67,29 @@ export default async function AboutPage() {
           <Reveal>
             <div className="relative aspect-[4/5] rounded-md border border-[var(--steel)] bg-[var(--graphite)] overflow-hidden">
               {/* Silver corner accents */}
-              <span className="absolute top-3 left-3 w-5 h-5 border-t border-l border-[var(--silver)]" />
-              <span className="absolute bottom-3 right-3 w-5 h-5 border-b border-r border-[var(--silver)]" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="font-display text-[8rem] leading-none text-[var(--steel)] select-none">
-                  AI
-                </span>
-              </div>
+              <span className="absolute top-3 left-3 w-5 h-5 border-t border-l border-[var(--silver)] z-10" />
+              <span className="absolute bottom-3 right-3 w-5 h-5 border-b border-r border-[var(--silver)] z-10" />
+              {settings.profile_image_url ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={settings.profile_image_url}
+                  alt="Aniekan Israel"
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="font-display text-[8rem] leading-none text-[var(--steel)] select-none">
+                    AI
+                  </span>
+                </div>
+              )}
             </div>
           </Reveal>
 
-          <div className="space-y-10">
-            {STORY.map((s, i) => (
-              <Reveal key={s.label} delay={i * 80}>
-                <MonoLabel>{s.label}</MonoLabel>
-                <p className="mt-3 text-lg text-[var(--mist)] leading-relaxed max-w-xl">{s.body}</p>
+          <div className="space-y-6">
+            {paragraphs.map((p, i) => (
+              <Reveal key={i} delay={i * 80}>
+                <p className="text-lg text-[var(--mist)] leading-relaxed max-w-xl">{p}</p>
               </Reveal>
             ))}
           </div>

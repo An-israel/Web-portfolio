@@ -92,6 +92,10 @@ export async function fetchSiteSettings(): Promise<SiteSettings> {
         const v = get<string[]>('budget_options', SEED_SETTINGS.budget_options);
         return Array.isArray(v) && v.length ? v : SEED_SETTINGS.budget_options;
       })(),
+      profile_image_url: url('profile_image_url', SEED_SETTINGS.profile_image_url),
+      about_headline: get('about_headline', SEED_SETTINGS.about_headline),
+      about_intro: get('about_intro', SEED_SETTINGS.about_intro),
+      about_story: get('about_story', SEED_SETTINGS.about_story),
     };
   } catch {
     return SEED_SETTINGS;

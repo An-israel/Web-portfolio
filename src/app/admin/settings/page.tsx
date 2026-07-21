@@ -64,6 +64,10 @@ export default function SettingsAdmin() {
       { key: 'resume_url', value: str('resume_url') },
       { key: 'stats', value: stats },
       { key: 'budget_options', value: budgets.map((b) => b.trim()).filter(Boolean) },
+      { key: 'profile_image_url', value: str('profile_image_url') },
+      { key: 'about_headline', value: str('about_headline') },
+      { key: 'about_intro', value: str('about_intro') },
+      { key: 'about_story', value: str('about_story') },
     ];
     const supabase = createClient();
     const { error: err } = await supabase
@@ -83,6 +87,16 @@ export default function SettingsAdmin() {
     setS((prev) => ({ ...prev, resume_url: data.publicUrl }));
   }
 
+  async function uploadProfile(file: File) {
+    setError('');
+    const supabase = createClient();
+    const path = `profile-${Date.now()}.${file.name.split('.').pop()}`;
+    const { error: e } = await supabase.storage.from('site-assets').upload(path, file, { upsert: true });
+    if (e) return setError(e.message);
+    const { data } = supabase.storage.from('site-assets').getPublicUrl(path);
+    setS((prev) => ({ ...prev, profile_image_url: data.publicUrl }));
+  }
+
   if (loading) return <p className="text-[var(--mist)]">Loading…</p>;
 
   return (
@@ -91,6 +105,43 @@ export default function SettingsAdmin() {
       <MonoLabel className="text-[var(--mist)]">SITE CONFIGURATION</MonoLabel>
 
       <div className="mt-8 space-y-5">
+        {/* Profile photo */}
+        <div>
+          <MonoLabel className="text-[var(--mist)] block mb-2">PROFILE PHOTO (SHOWN ON /ABOUT)</MonoLabel>
+          <div className="flex items-center gap-4">
+            <div className="w-20 h-24 rounded-md border border-[var(--steel)] bg-[var(--graphite)] overflow-hidden shrink-0 flex items-center justify-center">
+              {str('profile_image_url') ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={str('profile_image_url')} alt="profile" className="w-full h-full object-cover" />
+              ) : (
+                <span className="metal-text font-display text-2xl">AI</span>
+              )}
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => e.target.files?.[0] && uploadProfile(e.target.files[0])}
+              className="text-sm text-[var(--mist)]"
+            />
+          </div>
+        </div>
+
+        {/* About */}
+        <div className="rounded-md border border-[var(--steel)] p-4 space-y-4">
+          <MonoLabel className="text-[var(--platinum)]">ABOUT PAGE</MonoLabel>
+          <Field label="About headline" v={str('about_headline')} on={(v) => setS({ ...s, about_headline: v })} />
+          <Field label="About intro (one line)" v={str('about_intro')} on={(v) => setS({ ...s, about_intro: v })} area />
+          <div>
+            <MonoLabel className="text-[var(--mist)] block mb-2">ABOUT STORY (BLANK LINE = NEW PARAGRAPH)</MonoLabel>
+            <textarea
+              value={str('about_story')}
+              onChange={(e) => setS({ ...s, about_story: e.target.value })}
+              rows={8}
+              className="w-full rounded-md border border-[var(--steel)] bg-[var(--graphite)] px-4 py-2.5 text-sm text-[var(--platinum)] focus:border-[var(--silver)] focus:outline-none resize-y"
+            />
+          </div>
+        </div>
+
         <Field label="Hero headline" v={str('hero_headline')} on={(v) => setS({ ...s, hero_headline: v })} />
         <Field label="Hero subline" v={str('hero_subline')} on={(v) => setS({ ...s, hero_subline: v })} area />
         <Field label="Contact email" v={str('email')} on={(v) => setS({ ...s, email: v })} />

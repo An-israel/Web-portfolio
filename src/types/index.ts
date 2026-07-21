@@ -126,6 +126,10 @@ export interface SiteSettings {
   resume_url: string | null;
   stats: SiteStats;
   budget_options: string[];
+  profile_image_url: string | null;
+  about_headline: string;
+  about_intro: string;
+  about_story: string;
 }
 
 // ============================================================
