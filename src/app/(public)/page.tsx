@@ -4,7 +4,12 @@ import { MonoLabel } from '@/components/site/MonoLabel';
 import { PulseLine } from '@/components/site/PulseLine';
 import { Reveal } from '@/components/site/Reveal';
 import { ProjectCard } from '@/components/site/ProjectCard';
-import { fetchFeaturedProjects, fetchSiteSettings } from '@/lib/data/queries';
+import { DesignCard } from '@/components/site/DesignCard';
+import {
+  fetchFeaturedProjects,
+  fetchFeaturedDesigns,
+  fetchSiteSettings,
+} from '@/lib/data/queries';
 
 const CAPABILITIES = [
   {
@@ -22,9 +27,10 @@ const CAPABILITIES = [
 ];
 
 export default async function HomePage() {
-  const [settings, featured] = await Promise.all([
+  const [settings, featured, featuredDesigns] = await Promise.all([
     fetchSiteSettings(),
     fetchFeaturedProjects(),
+    fetchFeaturedDesigns(3),
   ]);
   const stats = [
     { label: 'PRODUCTS SHIPPED', value: settings.stats.products_shipped },
@@ -152,11 +158,48 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ---------- SELECTED DESIGNS ---------- */}
+      {featuredDesigns.length > 0 && (
+        <section className="border-t border-[var(--steel)]">
+          <div className="max-w-[1200px] mx-auto px-6 lg:px-8 py-24">
+            <Reveal className="flex items-end justify-between gap-6 mb-14">
+              <div>
+                <MonoLabel>SELECTED DESIGNS — 02</MonoLabel>
+                <h2 className="mt-4 font-display text-4xl sm:text-5xl text-[var(--platinum)]">
+                  The craft, up close.
+                </h2>
+              </div>
+              <Link
+                href="/designs"
+                className="hidden sm:flex items-center gap-2 mono-label text-[var(--mist)] hover:text-[var(--platinum)] transition-colors shrink-0"
+              >
+                View all designs <ArrowRight className="w-4 h-4" />
+              </Link>
+            </Reveal>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredDesigns.map((design, i) => (
+                <Reveal key={design.id} delay={i * 80}>
+                  <DesignCard design={design} />
+                </Reveal>
+              ))}
+            </div>
+
+            <Link
+              href="/designs"
+              className="mt-10 sm:hidden flex items-center justify-center gap-2 mono-label text-[var(--mist)] border border-[var(--steel)] rounded-md py-3.5"
+            >
+              View all designs <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </section>
+      )}
+
       {/* ---------- CAPABILITIES ---------- */}
       <section className="border-t border-[var(--steel)]">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-8 py-24">
           <Reveal>
-            <MonoLabel>WHAT I DO — 02</MonoLabel>
+            <MonoLabel>WHAT I DO — {featuredDesigns.length > 0 ? '03' : '02'}</MonoLabel>
           </Reveal>
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-px bg-[var(--steel)] border border-[var(--steel)] rounded-md overflow-hidden">
             {CAPABILITIES.map((cap, i) => (
@@ -190,7 +233,7 @@ export default async function HomePage() {
       <section className="border-t border-[var(--steel)]">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-8 py-24">
           <Reveal className="max-w-3xl">
-            <MonoLabel>THE APPROACH — 03</MonoLabel>
+            <MonoLabel>THE APPROACH — {featuredDesigns.length > 0 ? '04' : '03'}</MonoLabel>
             <p className="mt-8 font-display text-2xl sm:text-3xl leading-snug text-[var(--platinum)]">
               Most engineers wait for a spec. I&apos;ve been the founder, the designer, and the
               engineer on everything I&apos;ve shipped — which means I don&apos;t just write code,

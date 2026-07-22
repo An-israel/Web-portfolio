@@ -138,6 +138,24 @@ export async function fetchDesigns(): Promise<Design[]> {
   }
 }
 
+export async function fetchFeaturedDesigns(limit = 3): Promise<Design[]> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('designs')
+      .select('*')
+      .eq('published', true)
+      .eq('featured', true)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error || !data) return [];
+    return data as unknown as Design[];
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchDesignBySlug(slug: string): Promise<Design | null> {
   try {
     const supabase = await createClient();
