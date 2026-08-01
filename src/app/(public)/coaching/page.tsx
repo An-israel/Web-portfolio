@@ -3,7 +3,8 @@ import { Check } from 'lucide-react';
 import { MonoLabel } from '@/components/site/MonoLabel';
 import { Reveal } from '@/components/site/Reveal';
 import { PulseLine } from '@/components/site/PulseLine';
-import { EnrollButton, formatNaira } from '@/components/site/EnrollButton';
+import { EnrollButton } from '@/components/site/EnrollButton';
+import { formatNaira } from '@/lib/format';
 import { fetchCourses, fetchSiteSettings } from '@/lib/data/queries';
 
 export const metadata: Metadata = {

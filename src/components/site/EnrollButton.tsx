@@ -2,16 +2,13 @@
 
 import { useState } from 'react';
 import { X, Copy, Check, MessageCircle } from 'lucide-react';
+import { formatNaira } from '@/lib/format';
 
 interface Payment {
   bank: string;
   account: string;
   name: string;
   whatsapp: string;
-}
-
-export function formatNaira(n: number) {
-  return `₦${(n || 0).toLocaleString('en-NG')}`;
 }
 
 function waLink(number: string, text: string) {
