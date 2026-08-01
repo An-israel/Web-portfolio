@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Plus, ArrowUp, ArrowDown } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { MonoLabel } from '@/components/site/MonoLabel';
-import { formatNaira } from '@/components/site/EnrollButton';
+import { formatNaira } from '@/lib/format';
 import type { Course } from '@/types';
 
 export default function CoursesAdmin() {
