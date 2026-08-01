@@ -6,6 +6,7 @@ import { fetchSiteSettings } from '@/lib/data/queries';
 const NAV_LINKS = [
   { href: '/work', label: 'Work' },
   { href: '/designs', label: 'Designs' },
+  { href: '/coaching', label: 'Coaching' },
   { href: '/about', label: 'About' },
   { href: '/hire', label: 'Hire Me' },
 ];

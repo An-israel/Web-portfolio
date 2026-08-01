@@ -6,7 +6,7 @@ import {
   getFeaturedProjects as seedFeatured,
   getProjectBySlug as seedBySlug,
 } from '@/lib/data/site';
-import type { WorkProject, SiteSettings, Testimonial, Design } from '@/types';
+import type { WorkProject, SiteSettings, Testimonial, Design, Course } from '@/types';
 
 // ------------------------------------------------------------
 // Server-side reads. Every function falls back to the seeded
@@ -96,6 +96,10 @@ export async function fetchSiteSettings(): Promise<SiteSettings> {
       about_headline: get('about_headline', SEED_SETTINGS.about_headline),
       about_intro: get('about_intro', SEED_SETTINGS.about_intro),
       about_story: get('about_story', SEED_SETTINGS.about_story),
+      payment_bank: get('payment_bank', SEED_SETTINGS.payment_bank),
+      payment_account: get('payment_account', SEED_SETTINGS.payment_account),
+      payment_name: get('payment_name', SEED_SETTINGS.payment_name),
+      whatsapp_number: get('whatsapp_number', SEED_SETTINGS.whatsapp_number),
     };
   } catch {
     return SEED_SETTINGS;
@@ -151,6 +155,23 @@ export async function fetchFeaturedDesigns(limit = 3): Promise<Design[]> {
       .limit(limit);
     if (error || !data) return [];
     return data as unknown as Design[];
+  } catch {
+    return [];
+  }
+}
+
+// ---------- Courses ----------
+export async function fetchCourses(): Promise<Course[]> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('courses')
+      .select('*')
+      .eq('published', true)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false });
+    if (error || !data) return [];
+    return data as unknown as Course[];
   } catch {
     return [];
   }

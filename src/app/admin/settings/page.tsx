@@ -68,6 +68,10 @@ export default function SettingsAdmin() {
       { key: 'about_headline', value: str('about_headline') },
       { key: 'about_intro', value: str('about_intro') },
       { key: 'about_story', value: str('about_story') },
+      { key: 'payment_bank', value: str('payment_bank') },
+      { key: 'payment_account', value: str('payment_account') },
+      { key: 'payment_name', value: str('payment_name') },
+      { key: 'whatsapp_number', value: str('whatsapp_number') },
     ];
     const supabase = createClient();
     const { error: err } = await supabase
@@ -172,6 +176,21 @@ export default function SettingsAdmin() {
           />
           <p className="mt-1 text-xs text-[var(--mist)]">
             These are the budget choices visitors pick from on /hire.
+          </p>
+        </div>
+
+        {/* Payments (coaching) */}
+        <div className="rounded-md border border-[var(--steel)] p-4 space-y-4">
+          <MonoLabel className="text-[var(--platinum)]">PAYMENTS (COACHING POPUP)</MonoLabel>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Bank" v={str('payment_bank')} on={(v) => setS({ ...s, payment_bank: v })} />
+            <Field label="Account number" v={str('payment_account')} on={(v) => setS({ ...s, payment_account: v })} />
+            <Field label="Account name" v={str('payment_name')} on={(v) => setS({ ...s, payment_name: v })} />
+            <Field label="WhatsApp number" v={str('whatsapp_number')} on={(v) => setS({ ...s, whatsapp_number: v })} />
+          </div>
+          <p className="text-xs text-[var(--mist)]">
+            Shown when someone clicks Enrol on a course. WhatsApp number is used for the “send
+            receipt” button (Nigerian 0… numbers auto-convert to +234).
           </p>
         </div>
 
