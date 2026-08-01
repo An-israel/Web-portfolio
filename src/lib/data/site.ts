@@ -30,6 +30,10 @@ export const SITE_SETTINGS: SiteSettings = {
     "I'm Aniekan Israel — I design and build digital products end to end, from the brand and interface down to the backend that runs them.",
   about_story:
     "I started on a phone in Nigeria — no degree handed to me, no bootcamp. Just relentless building: first design, then full-stack engineering, learning each craft by shipping real things into the world.\n\nToday I'm a final-year student at the University of Nigeria running production software and design work side by side — multi-tenant SaaS, AI pipelines, brand systems, and interfaces used by real people.\n\nMost people pick one lane. I hold the whole picture — strategy, design, frontend, backend, and infrastructure — so nothing falls through the seams. Massive thoughts, massive execution.",
+  payment_bank: 'OPay',
+  payment_account: '7048083756',
+  payment_name: 'Aniekan Israel',
+  whatsapp_number: '07048083756',
 };
 
 export const PROJECTS: WorkProject[] = [

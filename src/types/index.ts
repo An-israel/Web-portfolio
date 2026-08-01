@@ -60,6 +60,24 @@ export interface Design {
   updated_at?: string;
 }
 
+// ---------- Coaching / courses ----------
+export interface Course {
+  id: string;
+  slug: string;
+  title: string;
+  summary: string | null;
+  description: string | null;
+  curriculum: string[];
+  price_naira: number;
+  duration: string | null;
+  level: string | null;
+  featured: boolean;
+  sort_order: number;
+  published: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export type InquiryProjectType =
   | 'AI Product'
   | 'Full-Stack Build'
@@ -130,6 +148,10 @@ export interface SiteSettings {
   about_headline: string;
   about_intro: string;
   about_story: string;
+  payment_bank: string;
+  payment_account: string;
+  payment_name: string;
+  whatsapp_number: string;
 }
 
 // ============================================================

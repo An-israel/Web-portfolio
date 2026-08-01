@@ -85,6 +85,23 @@ type ProfileRow = {
   created_at: string;
 };
 
+type CourseRow = {
+  id: string;
+  slug: string;
+  title: string;
+  summary: string | null;
+  description: string | null;
+  curriculum: string[];
+  price_naira: number;
+  duration: string | null;
+  level: string | null;
+  featured: boolean;
+  sort_order: number;
+  published: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 type DesignRow = {
   id: string;
   slug: string;
@@ -189,6 +206,26 @@ export type Database = {
         Row: ProfileRow;
         Insert: WithDefaults<ProfileRow, 'email' | 'is_admin' | 'created_at'>;
         Update: Partial<ProfileRow>;
+        Relationships: [];
+      };
+      courses: {
+        Row: CourseRow;
+        Insert: WithDefaults<
+          CourseRow,
+          | 'id'
+          | 'summary'
+          | 'description'
+          | 'curriculum'
+          | 'price_naira'
+          | 'duration'
+          | 'level'
+          | 'featured'
+          | 'sort_order'
+          | 'published'
+          | 'created_at'
+          | 'updated_at'
+        >;
+        Update: Partial<CourseRow>;
         Relationships: [];
       };
       designs: {
