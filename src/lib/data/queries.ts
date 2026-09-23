@@ -1,28 +1,30 @@
-import { createClient } from '@/lib/supabase/server';
+import { createPublicClient } from '@/lib/supabase/public';
+import { SUPABASE_CONFIGURED } from '@/lib/site-config';
 import {
-  PROJECTS as SEED_PROJECTS,
   SITE_SETTINGS as SEED_SETTINGS,
   getAllProjects as seedAll,
   getFeaturedProjects as seedFeatured,
   getProjectBySlug as seedBySlug,
+  mergeSettings,
 } from '@/lib/data/site';
 import type { WorkProject, SiteSettings, Testimonial, Design, Course } from '@/types';
 
 // ------------------------------------------------------------
-// Server-side reads. Every function falls back to the seeded
-// data layer if Supabase is unconfigured, errors, or is empty,
-// so the public site never breaks.
+// Server-side public reads (cookie-free, so pages can be cached).
+// The built-in sample projects are used only when Supabase isn't
+// configured or can't be reached — never when you've deliberately
+// unpublished or deleted something.
 // ------------------------------------------------------------
 
 export async function fetchAllProjects(): Promise<WorkProject[]> {
+  if (!SUPABASE_CONFIGURED) return seedAll();
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
+    const { data, error } = await createPublicClient()
       .from('projects')
       .select('*')
       .eq('published', true)
       .order('sort_order', { ascending: true });
-    if (error || !data || data.length === 0) return seedAll();
+    if (error || !data) return seedAll();
     return data as unknown as WorkProject[];
   } catch {
     return seedAll();
@@ -30,15 +32,15 @@ export async function fetchAllProjects(): Promise<WorkProject[]> {
 }
 
 export async function fetchFeaturedProjects(): Promise<WorkProject[]> {
+  if (!SUPABASE_CONFIGURED) return seedFeatured();
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
+    const { data, error } = await createPublicClient()
       .from('projects')
       .select('*')
       .eq('published', true)
       .eq('featured', true)
       .order('sort_order', { ascending: true });
-    if (error || !data || data.length === 0) return seedFeatured();
+    if (error || !data) return seedFeatured();
     return data as unknown as WorkProject[];
   } catch {
     return seedFeatured();
@@ -46,74 +48,41 @@ export async function fetchFeaturedProjects(): Promise<WorkProject[]> {
 }
 
 export async function fetchProjectBySlug(slug: string): Promise<WorkProject | null> {
+  if (!SUPABASE_CONFIGURED) return seedBySlug(slug) ?? null;
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
+    const { data, error } = await createPublicClient()
       .from('projects')
       .select('*')
       .eq('slug', slug)
       .eq('published', true)
       .maybeSingle();
-    if (error || !data) return seedBySlug(slug) ?? null;
-    return data as unknown as WorkProject;
+    if (error) return seedBySlug(slug) ?? null;
+    return (data as unknown as WorkProject) ?? null;
   } catch {
     return seedBySlug(slug) ?? null;
   }
 }
 
 export async function fetchSiteSettings(): Promise<SiteSettings> {
+  if (!SUPABASE_CONFIGURED) return SEED_SETTINGS;
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase.from('site_settings').select('key, value');
-    if (error || !data || data.length === 0) return SEED_SETTINGS;
-
-    const map = new Map(data.map((r) => [r.key, r.value]));
-    const get = <T>(key: string, fallback: T): T => {
-      const v = map.get(key);
-      return v === undefined || v === null ? fallback : (v as T);
-    };
-    // Optional URLs: empty string means "unset" → null.
-    const url = (key: string, fallback: string | null): string | null => {
-      const v = get<string | null>(key, fallback);
-      return v ? v : null;
-    };
-
-    return {
-      hero_headline: get('hero_headline', SEED_SETTINGS.hero_headline),
-      hero_subline: get('hero_subline', SEED_SETTINGS.hero_subline),
-      email: get('email', SEED_SETTINGS.email),
-      github_url: url('github_url', SEED_SETTINGS.github_url),
-      x_url: url('x_url', SEED_SETTINGS.x_url),
-      linkedin_url: url('linkedin_url', SEED_SETTINGS.linkedin_url),
-      availability_status: get('availability_status', SEED_SETTINGS.availability_status),
-      resume_url: url('resume_url', SEED_SETTINGS.resume_url),
-      stats: get('stats', SEED_SETTINGS.stats),
-      budget_options: (() => {
-        const v = get<string[]>('budget_options', SEED_SETTINGS.budget_options);
-        return Array.isArray(v) && v.length ? v : SEED_SETTINGS.budget_options;
-      })(),
-      profile_image_url: url('profile_image_url', SEED_SETTINGS.profile_image_url),
-      about_headline: get('about_headline', SEED_SETTINGS.about_headline),
-      about_intro: get('about_intro', SEED_SETTINGS.about_intro),
-      about_story: get('about_story', SEED_SETTINGS.about_story),
-      payment_bank: get('payment_bank', SEED_SETTINGS.payment_bank),
-      payment_account: get('payment_account', SEED_SETTINGS.payment_account),
-      payment_name: get('payment_name', SEED_SETTINGS.payment_name),
-      whatsapp_number: get('whatsapp_number', SEED_SETTINGS.whatsapp_number),
-    };
+    const { data, error } = await createPublicClient().from('site_settings').select('key, value');
+    if (error || !data) return SEED_SETTINGS;
+    return mergeSettings(new Map(data.map((r) => [r.key, r.value])));
   } catch {
     return SEED_SETTINGS;
   }
 }
 
 export async function fetchTestimonials(): Promise<Testimonial[]> {
+  if (!SUPABASE_CONFIGURED) return [];
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
+    const { data, error } = await createPublicClient()
       .from('testimonials')
       .select('*')
       .eq('published', true)
-      .order('sort_order', { ascending: true });
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false });
     if (error || !data) return [];
     return data as unknown as Testimonial[];
   } catch {
@@ -121,20 +90,18 @@ export async function fetchTestimonials(): Promise<Testimonial[]> {
   }
 }
 
-export function allProjectSlugs(): { slug: string }[] {
-  return SEED_PROJECTS.map((p) => ({ slug: p.slug }));
-}
-
-// ---------- Designs ----------
-export async function fetchDesigns(): Promise<Design[]> {
+export async function fetchDesigns(opts: { featured?: boolean; limit?: number } = {}): Promise<Design[]> {
+  if (!SUPABASE_CONFIGURED) return [];
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
+    let q = createPublicClient()
       .from('designs')
       .select('*')
       .eq('published', true)
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: false });
+    if (opts.featured) q = q.eq('featured', true);
+    if (opts.limit) q = q.limit(opts.limit);
+    const { data, error } = await q;
     if (error || !data) return [];
     return data as unknown as Design[];
   } catch {
@@ -142,29 +109,12 @@ export async function fetchDesigns(): Promise<Design[]> {
   }
 }
 
-export async function fetchFeaturedDesigns(limit = 3): Promise<Design[]> {
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from('designs')
-      .select('*')
-      .eq('published', true)
-      .eq('featured', true)
-      .order('sort_order', { ascending: true })
-      .order('created_at', { ascending: false })
-      .limit(limit);
-    if (error || !data) return [];
-    return data as unknown as Design[];
-  } catch {
-    return [];
-  }
-}
+export const fetchFeaturedDesigns = (limit = 3) => fetchDesigns({ featured: true, limit });
 
-// ---------- Courses ----------
 export async function fetchCourses(): Promise<Course[]> {
+  if (!SUPABASE_CONFIGURED) return [];
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
+    const { data, error } = await createPublicClient()
       .from('courses')
       .select('*')
       .eq('published', true)
@@ -178,9 +128,9 @@ export async function fetchCourses(): Promise<Course[]> {
 }
 
 export async function fetchDesignBySlug(slug: string): Promise<Design | null> {
+  if (!SUPABASE_CONFIGURED) return null;
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
+    const { data, error } = await createPublicClient()
       .from('designs')
       .select('*')
       .eq('slug', slug)

@@ -80,21 +80,9 @@ export interface Course {
   updated_at?: string;
 }
 
-export type InquiryProjectType =
-  | 'AI Product'
-  | 'Full-Stack Build'
-  | 'MVP / Zero-to-One'
-  | 'Consulting'
-  | 'Full-Time Role'
-  | 'Other';
+/** A label from HIRE_PROJECT_TYPES (older inquiries may hold legacy values). */
+export type InquiryProjectType = string;
 
-export type InquiryBudget =
-  | '<$2k'
-  | '$2k–$5k'
-  | '$5k–$15k'
-  | '$15k–$50k'
-  | '$50k+'
-  | 'Salary role';
 
 export type InquiryTimeline = 'ASAP' | '2–4 weeks' | '1–3 months' | 'Flexible';
 
@@ -154,50 +142,14 @@ export interface SiteSettings {
   payment_account: string;
   payment_name: string;
   whatsapp_number: string;
-}
-
-// ============================================================
-// Legacy types — consumed only by the /admin subsystem and a
-// few dormant components pending the admin rebuild. Not used
-// by any public page. Kept so the project type-checks.
-// ============================================================
-
-export interface Project {
-  id: string;
-  title: string;
-  slug: string;
-  category: string;
-  short_description: string | null;
-  full_description: string | null;
-  cover_image_url: string | null;
-  cover_device: 'browser' | 'laptop' | 'phone';
-  gallery: GalleryImage[] | null;
-  tech_stack: string[] | null;
-  live_url: string | null;
-  is_published: boolean;
-  is_featured: boolean;
-  sort_order: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface GalleryImage {
-  url: string;
-  alt: string;
-  device: 'browser' | 'laptop' | 'phone';
-}
-
-export interface PricingTier {
-  id: string;
-  name: string;
-  price_label: string;
-  summary: string | null;
-  features: string[];
-  delivery_days: number;
-  is_highlighted: boolean;
-  is_active: boolean;
-  sort_order: number;
-  created_at: string;
+  /** Home “Approach” paragraph. */
+  home_approach: string;
+  /** One per line: `Title | body`. */
+  about_principles: string;
+  /** One per line: `Group: item, item`. */
+  about_toolbox: string;
+  /** One per line: `Year | milestone`. */
+  about_timeline: string;
 }
 
 export interface Testimonial {
@@ -212,17 +164,6 @@ export interface Testimonial {
   created_at: string;
 }
 
-export interface Inquiry {
-  id: string;
-  name: string;
-  email: string | null;
-  phone: string | null;
-  project_type: string;
-  message: string | null;
-  is_read: boolean;
-  created_at: string;
-}
-
 export interface ClientBrief {
   id: string;
   token: string;
@@ -234,6 +175,22 @@ export interface ClientBrief {
   answers: BriefAnswers | null;
   submitted_at: string | null;
   internal_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type EnrolmentStatus = 'pending' | 'paid' | 'cancelled';
+
+export interface Enrolment {
+  id: string;
+  course_id: string | null;
+  course_title: string;
+  amount_naira: number;
+  full_name: string;
+  phone: string;
+  email: string | null;
+  status: EnrolmentStatus;
+  notes: string | null;
   created_at: string;
   updated_at: string;
 }

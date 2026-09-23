@@ -4,6 +4,15 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
   : '*.supabase.co';
 
+// React's dev tooling needs eval; production doesn't.
+const scriptSrc = [
+  "'self'",
+  ...(process.env.NODE_ENV === 'development' ? ["'unsafe-eval'"] : []),
+  "'unsafe-inline'",
+  '*.vercel-insights.com',
+  'va.vercel-scripts.com',
+].join(' ');
+
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
@@ -45,10 +54,10 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' *.vercel-insights.com va.vercel-scripts.com",
+              `script-src ${scriptSrc}`,
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https://*.supabase.co https://lh3.googleusercontent.com",
+              "img-src 'self' data: blob: https:",
               "connect-src 'self' https://*.supabase.co https://vitals.vercel-insights.com",
               "frame-src 'none'",
               "object-src 'none'",
