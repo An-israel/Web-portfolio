@@ -165,15 +165,19 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Reveal-on-scroll baseline (JS toggles .is-visible) */
-.reveal {
-  opacity: 0;
-  transform: translateY(12px);
-  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-  will-change: opacity, transform;
+@keyframes reveal-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
 }
-.reveal.is-visible {
-  opacity: 1;
-  transform: none;
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      /* forwards only: before entering the viewport the element keeps its normal (visible) style */
+      animation: reveal-rise linear forwards;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+  }
 }
 
 /* ---------- Scrollbar ---------- */
@@ -213,5 +217,4 @@ h1, h2, h3, h4, h5, h6 {
     transition-duration: 0.001ms !important;
   }
   .pulse-trace { stroke-dashoffset: 0; }
-  .reveal { opacity: 1; transform: none; }
 }

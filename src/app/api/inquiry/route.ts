@@ -1,93 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { inquiryApiSchema } from '@/lib/schemas';
+import { inquiryApiSchema, type InquiryApiData } from '@/lib/schemas';
+import { escapeHtml } from '@/lib/html';
+import { clientIp, isRateLimited } from '@/lib/server/rate-limit';
+import { CONTACT_EMAIL, SITE_URL } from '@/lib/site-config';
 
-// In-memory rate limiter: max 3 per IP per 10 min. (Per-instance on
-// serverless — a coarse guard; the honeypot + min-time do most of the work.)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const WINDOW_MS = 10 * 60 * 1000;
-const MAX_REQUESTS = 3;
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + WINDOW_MS });
-    return false;
-  }
-  if (entry.count >= MAX_REQUESTS) return true;
-  entry.count++;
-  return false;
-}
-
-const ADMIN_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'hello@aniekanisrael.com';
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://aniekanisrael.com';
-
-async function sendEmails(data: {
-  full_name: string;
-  email: string;
-  company?: string | null;
-  project_type: string;
-  budget_range?: string | null;
-  timeline?: string | null;
-  description: string;
-}) {
+// Notify the site owner only. There is deliberately no auto-reply to the
+// visitor's address: that let anyone make this site email a stranger.
+async function notifyOwner(d: InquiryApiData) {
   const key = process.env.RESEND_API_KEY;
   const from = process.env.RESEND_FROM || 'Aniekan Israel <onboarding@resend.dev>';
   if (!key) return; // email is optional — skip cleanly if unconfigured
 
-  const send = (payload: Record<string, unknown>) =>
-    fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    }).catch(() => {});
-
-  // 1) Notify admin
-  await send({
-    from,
-    to: ADMIN_EMAIL,
-    reply_to: data.email,
-    subject: `NEW INQUIRY — ${data.project_type} — ${data.budget_range ?? 'n/a'}`,
-    html: `
-      <div style="background:#060607;color:#edeff2;font-family:sans-serif;padding:24px">
-        <h2 style="margin:0 0 16px">New inquiry</h2>
-        <p><b>${data.full_name}</b> &lt;${data.email}&gt;${data.company ? ` · ${data.company}` : ''}</p>
-        <p>Type: ${data.project_type}<br/>Budget: ${data.budget_range ?? '—'}<br/>Timeline: ${data.timeline ?? '—'}</p>
-        <p style="white-space:pre-wrap;color:#8a8f98">${data.description}</p>
-        <p><a href="${SITE_URL}/admin/inquiries" style="color:#c7cbd1">Open in admin →</a></p>
-      </div>`,
-  });
-
-  // 2) Auto-confirmation to sender
-  await send({
-    from,
-    to: data.email,
-    subject: 'Your inquiry is in — Aniekan Israel',
-    html: `
-      <div style="background:#060607;color:#edeff2;font-family:sans-serif;padding:24px">
-        <p>Hi ${data.full_name.split(' ')[0]},</p>
-        <p>Your inquiry is in. I read every one personally and I'll reply within 24 hours.</p>
-        <p style="color:#8a8f98">— Aniekan Israel</p>
-      </div>`,
-  });
+  const e = escapeHtml;
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from,
+      to: CONTACT_EMAIL,
+      reply_to: d.email,
+      subject: `New inquiry — ${d.project_type} — ${d.budget_range ?? 'n/a'}`,
+      html: `
+        <div style="background:#060607;color:#edeff2;font-family:sans-serif;padding:24px">
+          <h2 style="margin:0 0 16px">New inquiry</h2>
+          <p><b>${e(d.full_name)}</b> &lt;${e(d.email)}&gt;${d.company ? ` · ${e(d.company)}` : ''}</p>
+          <p>Type: ${e(d.project_type)}<br/>Budget: ${e(d.budget_range ?? '—')}<br/>Timeline: ${e(d.timeline ?? '—')}</p>
+          <p style="white-space:pre-wrap;color:#8a8f98">${e(d.description)}</p>
+          <p><a href="${SITE_URL}/admin/inquiries" style="color:#c7cbd1">Open in admin →</a></p>
+        </div>`,
+    }),
+  }).catch(() => {});
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const ip =
-      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-      req.headers.get('x-real-ip') ||
-      'unknown';
-
     const body = await req.json().catch(() => null);
     if (!body) return NextResponse.json({ ok: false }, { status: 400 });
 
-    // Honeypot — silently accept (looks successful to the bot), drop the data.
+    // Honeypot / too-fast submissions: pretend success, drop the data.
     if (typeof body.website === 'string' && body.website.length > 0) {
       return NextResponse.json({ ok: true });
     }
-    // Min time on form.
     if (typeof body.elapsed_ms === 'number' && body.elapsed_ms < 3000) {
       return NextResponse.json({ ok: true });
     }
@@ -100,7 +54,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (isRateLimited(ip)) {
+    if (isRateLimited(`inquiry:${clientIp(req)}`)) {
       // Don't reveal the limit — pretend success.
       return NextResponse.json({ ok: true });
     }
@@ -124,7 +78,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false }, { status: 500 });
     }
 
-    await sendEmails(d);
+    await notifyOwner(d);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[inquiry] unexpected:', err);

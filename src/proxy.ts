@@ -39,13 +39,22 @@ export async function proxy(request: NextRequest) {
     }
   );
 
+  // getUser() verifies the session with Supabase (getSession only trusts the cookie).
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     const loginUrl = new URL('/admin/login', request.url);
     loginUrl.searchParams.set('next', pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Signed in isn't enough — the account must be flagged as admin.
+  const { data: isAdmin } = await supabase.rpc('is_admin');
+  if (isAdmin !== true) {
+    const loginUrl = new URL('/admin/login', request.url);
+    loginUrl.searchParams.set('error', 'not_admin');
     return NextResponse.redirect(loginUrl);
   }
 

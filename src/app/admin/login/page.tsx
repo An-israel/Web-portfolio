@@ -9,10 +9,13 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get('next') || '/admin';
+  const notAdmin = searchParams.get('error') === 'not_admin';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(
+    notAdmin ? 'That account isn’t an admin. Sign in with your admin account.' : ''
+  );
   const [loading, setLoading] = useState(false);
 
   async function handleLogin(e: React.FormEvent) {
@@ -26,7 +29,15 @@ function LoginForm() {
       setLoading(false);
       return;
     }
-    router.push(next);
+    const { data: isAdmin } = await supabase.rpc('is_admin');
+    if (isAdmin !== true) {
+      await supabase.auth.signOut();
+      setError('That account isn’t an admin. Sign in with your admin account.');
+      setLoading(false);
+      return;
+    }
+    // Only allow same-site redirects after login.
+    router.push(next.startsWith('/admin') ? next : '/admin');
     router.refresh();
   }
 

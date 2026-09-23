@@ -58,3 +58,12 @@ export const testimonialSchema = z.object({
 });
 
 export type TestimonialFormData = z.infer<typeof testimonialSchema>;
+
+// ---------- Coaching enrolment (public → /api/enrol) ----------
+export const enrolApiSchema = z.object({
+  course_id: z.string().uuid(),
+  full_name: z.string().trim().min(2, 'Enter your full name').max(120),
+  phone: z.string().trim().min(7, 'Enter your WhatsApp number').max(40),
+  email: z.string().trim().email('Enter a valid email').max(200).optional().or(z.literal('')),
+  website: z.string().max(0).optional(), // honeypot — must be empty
+});

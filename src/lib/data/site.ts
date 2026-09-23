@@ -1,17 +1,16 @@
 import type { WorkProject, SiteSettings } from '@/types';
 
 // ------------------------------------------------------------
-// Typed data layer. Public pages read through the accessors
-// below; these currently return seeded content and will be
-// swapped to Supabase reads (with the same shape) in the
-// backend phase. Nothing here should ever throw.
+// Built-in defaults. Settings fall back to these field by field;
+// the sample projects are only shown when Supabase isn't set up
+// (e.g. a fresh local checkout) or can't be reached.
 // ------------------------------------------------------------
 
 export const SITE_SETTINGS: SiteSettings = {
-  hero_headline: 'I build AI products that ship.',
+  hero_headline: 'Websites and brands that win you customers.',
   hero_subline:
-    "Founder-level engineer. I've designed, built, and launched multi-tenant SaaS, AI content systems, and autonomous tools — end to end, solo.",
-  email: 'hello@aniekanisrael.com',
+    "I'm Aniekan — a designer and full-stack engineer. I design brands and build fast, modern websites and web apps for businesses, from the first logo sketch to the live site.",
+  email: 'aniekaneazy@gmail.com',
   github_url: null,
   x_url: null,
   linkedin_url: null,
@@ -23,7 +22,7 @@ export const SITE_SETTINGS: SiteSettings = {
     stack_depth: 'FRONTEND → INFRA',
     response_time: '< 24H',
   },
-  budget_options: ['<$2k', '$2k–$5k', '$5k–$15k', '$15k–$50k', '$50k+'],
+  budget_options: ['Under ₦200k', '₦200k – ₦500k', '₦500k – ₦1M', '₦1M – ₦2.5M', '₦2.5M+', 'Not sure yet'],
   profile_image_url: null,
   about_headline: 'A designer and engineer who ships.',
   about_intro:
@@ -34,6 +33,22 @@ export const SITE_SETTINGS: SiteSettings = {
   payment_account: '7048083756',
   payment_name: 'Aniekan Israel',
   whatsapp_number: '07048083756',
+  home_approach:
+    "Most people hire a designer, then a developer, then someone to fix what fell between them. I'm all three — brand, interface and the engineering underneath — so your website looks right, works right and ships on time. Self-taught, starting on a phone in Nigeria, now building products used in production.",
+  about_principles:
+    'Architecture first | Decisions about data, security, and structure come before the first pixel or component. It’s cheaper to think than to rewrite.\n' +
+    'Design and code are one craft | I don’t hand a design off to an engineer — I’m both. The interface and the data model get decided together, so the product feels whole.\n' +
+    'Ship, then sharpen | A live product teaches more than a perfect plan. I get it real, then refine against reality.',
+  about_toolbox:
+    'Design: Figma, Brand Identity, UI/UX, Typography, Social / Print\n' +
+    'Frontend: React, Next.js, TypeScript, Tailwind\n' +
+    'Backend: Supabase, PostgreSQL, Node, Edge Functions, RLS\n' +
+    'AI: LLM APIs, Prompt systems, Agent orchestration, Image pipelines',
+  about_timeline:
+    '2022 | Designing on a phone.\n' +
+    '2024 | First full products — shipped through the blackouts.\n' +
+    '2025 | SkryveAI, NexxosHQ, SceneForge.\n' +
+    '2026 | Building websites, brands and products for clients worldwide.',
 };
 
 export const PROJECTS: WorkProject[] = [
@@ -213,4 +228,67 @@ export function getProjectBySlug(slug: string): WorkProject | undefined {
 
 export function getSiteSettings(): SiteSettings {
   return SITE_SETTINGS;
+}
+
+/** Settings keys that must never render blank on the site. */
+const REQUIRED_TEXT: (keyof SiteSettings)[] = [
+  'hero_headline',
+  'hero_subline',
+  'email',
+  'about_headline',
+  'about_intro',
+  'about_story',
+  'payment_bank',
+  'payment_account',
+  'payment_name',
+  'whatsapp_number',
+  'home_approach',
+  'about_principles',
+  'about_toolbox',
+  'about_timeline',
+];
+
+/** Merge stored settings over the defaults, field by field. Blank required text falls back too. */
+export function mergeSettings(map: Map<string, unknown>): SiteSettings {
+  const out: Record<string, unknown> = { ...SITE_SETTINGS };
+  for (const [key, fallback] of Object.entries(SITE_SETTINGS)) {
+    const v = map.get(key);
+    if (v === undefined || v === null) continue;
+    if (typeof fallback === 'string' || fallback === null) {
+      if (typeof v !== 'string') continue;
+      const blank = v.trim() === '';
+      if (blank && REQUIRED_TEXT.includes(key as keyof SiteSettings)) continue;
+      // Optional URLs: empty string means "unset".
+      out[key] = blank ? null : v;
+    } else if (Array.isArray(fallback)) {
+      if (Array.isArray(v) && v.length) out[key] = v;
+    } else if (typeof fallback === 'object') {
+      if (v && typeof v === 'object') out[key] = { ...fallback, ...(v as object) };
+    }
+  }
+  return out as unknown as SiteSettings;
+}
+
+/** `Left | right` per line → pairs (About principles, timeline). */
+export function parsePipeLines(text: string): [string, string][] {
+  return (text || '')
+    .split('\n')
+    .map((line) => {
+      const i = line.indexOf('|');
+      return i < 0 ? [line.trim(), ''] : [line.slice(0, i).trim(), line.slice(i + 1).trim()];
+    })
+    .filter(([a]) => a) as [string, string][];
+}
+
+/** `Group: a, b, c` per line → toolbox groups. */
+export function parseToolbox(text: string): { group: string; items: string[] }[] {
+  return (text || '')
+    .split('\n')
+    .map((line) => {
+      const i = line.indexOf(':');
+      const group = (i < 0 ? line : line.slice(0, i)).trim();
+      const items = i < 0 ? [] : line.slice(i + 1).split(',').map((s) => s.trim()).filter(Boolean);
+      return { group, items };
+    })
+    .filter((g) => g.group);
 }

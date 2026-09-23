@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { checkSave } from '@/lib/admin-client';
 import { MonoLabel } from '@/components/site/MonoLabel';
 import type { WorkProject } from '@/types';
 
@@ -11,14 +12,15 @@ export default function ProjectsAdmin() {
   const [rows, setRows] = useState<WorkProject[]>([]);
   const [loading, setLoading] = useState(true);
 
-  async function load() {
-    const supabase = createClient();
-    const { data } = await supabase
+  function load() {
+    return createClient()
       .from('projects')
       .select('*')
-      .order('sort_order', { ascending: true });
-    setRows((data || []) as unknown as WorkProject[]);
-    setLoading(false);
+      .order('sort_order', { ascending: true })
+      .then(({ data }) => {
+        setRows((data || []) as unknown as WorkProject[]);
+        setLoading(false);
+      });
   }
 
   useEffect(() => {
@@ -26,9 +28,11 @@ export default function ProjectsAdmin() {
   }, []);
 
   async function toggle(id: string, field: 'featured' | 'published', value: boolean) {
-    setRows((rs) => rs.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
+    const apply = (v: boolean) => setRows((rs) => rs.map((r) => (r.id === id ? { ...r, [field]: v } : r)));
+    apply(value);
     const supabase = createClient();
-    await supabase.from('projects').update({ [field]: value } as never).eq('id', id);
+    const res = await supabase.from('projects').update({ [field]: value } as never).eq('id', id);
+    checkSave(res, { revert: () => apply(!value) });
   }
 
   return (

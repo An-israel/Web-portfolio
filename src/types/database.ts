@@ -137,6 +137,20 @@ type ClientBriefRow = {
   updated_at: string;
 };
 
+type EnrolmentRow = {
+  id: string;
+  course_id: string | null;
+  course_title: string;
+  amount_naira: number;
+  full_name: string;
+  phone: string;
+  email: string | null;
+  status: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 type WithDefaults<T, Optional extends keyof T> = Omit<T, Optional> &
   Partial<Pick<T, Optional>>;
 
@@ -285,12 +299,25 @@ export type Database = {
         Update: Partial<ClientBriefRow>;
         Relationships: [];
       };
+      enrolments: {
+        Row: EnrolmentRow;
+        Insert: WithDefaults<
+          EnrolmentRow,
+          'id' | 'course_id' | 'amount_naira' | 'email' | 'status' | 'notes' | 'created_at' | 'updated_at'
+        >;
+        Update: Partial<EnrolmentRow>;
+        Relationships: [];
+      };
     };
     Views: Record<never, never>;
     Functions: {
       is_admin: {
         Args: Record<never, never>;
         Returns: boolean;
+      };
+      page_view_stats: {
+        Args: { since: string };
+        Returns: Json;
       };
     };
     Enums: Record<never, never>;

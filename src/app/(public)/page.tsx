@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { MonoLabel } from '@/components/site/MonoLabel';
@@ -5,32 +6,26 @@ import { PulseLine } from '@/components/site/PulseLine';
 import { Reveal } from '@/components/site/Reveal';
 import { ProjectCard } from '@/components/site/ProjectCard';
 import { DesignCard } from '@/components/site/DesignCard';
+import { Testimonials } from '@/components/site/Testimonials';
+import { SERVICES } from '@/lib/data/services';
+import { SITE_URL } from '@/lib/site-config';
 import {
   fetchFeaturedProjects,
   fetchFeaturedDesigns,
   fetchSiteSettings,
+  fetchTestimonials,
 } from '@/lib/data/queries';
 
-const CAPABILITIES = [
-  {
-    title: 'AI Product Engineering',
-    body: 'LLM integration, agent workflows, and prompt systems that hold up in production — not demos.',
-  },
-  {
-    title: 'Full-Stack Development',
-    body: 'Next.js, React, TypeScript, Supabase, Postgres, and RLS-secured multi-tenant systems.',
-  },
-  {
-    title: 'Zero-to-One Builds',
-    body: 'I take products from a blank repo to launched — architecture, UI, backend, deployment.',
-  },
-];
+export const revalidate = 60;
+
+export const metadata: Metadata = { alternates: { canonical: '/' } };
 
 export default async function HomePage() {
-  const [settings, featured, featuredDesigns] = await Promise.all([
+  const [settings, featured, featuredDesigns, testimonials] = await Promise.all([
     fetchSiteSettings(),
     fetchFeaturedProjects(),
     fetchFeaturedDesigns(3),
+    fetchTestimonials(),
   ]);
   const stats = [
     { label: 'PRODUCTS SHIPPED', value: settings.stats.products_shipped },
@@ -38,6 +33,16 @@ export default async function HomePage() {
     { label: 'STACK DEPTH', value: settings.stats.stack_depth },
     { label: 'RESPONSE TIME', value: settings.stats.response_time },
   ];
+
+  // Section eyebrows are numbered in the order they actually appear.
+  const order = [
+    'services',
+    featured.length > 0 && 'work',
+    featuredDesigns.length > 0 && 'designs',
+    testimonials.length > 0 && 'testimonials',
+    'approach',
+  ].filter(Boolean) as string[];
+  const num = (key: string) => String(order.indexOf(key) + 1).padStart(2, '0');
 
   const sameAs = [settings.github_url, settings.x_url, settings.linkedin_url].filter(Boolean);
   // Headline is editable in admin Settings; accent the last word.
@@ -48,10 +53,10 @@ export default async function HomePage() {
     '@context': 'https://schema.org',
     '@type': 'Person',
     name: 'Aniekan Israel',
-    jobTitle: 'Full-Stack & AI Engineer',
+    jobTitle: 'Designer & Full-Stack Engineer',
     email: `mailto:${settings.email}`,
     address: { '@type': 'PostalAddress', addressLocality: 'Lagos', addressCountry: 'NG' },
-    url: process.env.NEXT_PUBLIC_SITE_URL || 'https://aniekanisrael.com',
+    url: SITE_URL,
     ...(sameAs.length ? { sameAs } : {}),
   };
 
@@ -62,11 +67,11 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       {/* ---------- HERO ---------- */}
-      <section className="relative min-h-screen flex items-center">
-        <div className="max-w-[1200px] mx-auto px-6 lg:px-8 w-full pt-28 pb-20">
+      <section className="relative min-h-[88vh] flex items-center">
+        <div className="max-w-[1200px] mx-auto px-6 lg:px-8 w-full pt-28 pb-24">
           <div className="max-w-4xl">
             <Reveal>
-              <MonoLabel>FULL-STACK &amp; AI ENGINEER — LAGOS / REMOTE</MonoLabel>
+              <MonoLabel>WEBSITES · BRANDS · WEB APPS — LAGOS / REMOTE</MonoLabel>
             </Reveal>
 
             <Reveal delay={80}>
@@ -87,13 +92,13 @@ export default async function HomePage() {
                   href="/hire"
                   className="rounded-md border border-[var(--silver)] px-6 py-3.5 text-sm font-medium text-[var(--white)] hover:bg-[var(--white)] hover:text-[var(--obsidian)] transition-colors"
                 >
-                  Start a project
+                  Start your project
                 </Link>
                 <Link
-                  href="/work"
+                  href="/services"
                   className="group flex items-center gap-2 px-2 py-3.5 text-sm text-[var(--mist)] hover:text-[var(--platinum)] transition-colors"
                 >
-                  See the work
+                  See what I do
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                 </Link>
               </div>
@@ -112,51 +117,91 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {/* Proof ticker at the fold edge */}
+        {/* Proof ticker at the fold edge — follows the Stats in Settings */}
         <div className="absolute bottom-0 inset-x-0 border-t border-[var(--steel)]">
           <div className="max-w-[1200px] mx-auto px-6 lg:px-8 py-4 overflow-hidden">
             <MonoLabel className="whitespace-nowrap text-[var(--mist)]">
-              6+ PRODUCTS SHIPPED · MULTI-TENANT SAAS · LLM PIPELINES · NEXT.JS / SUPABASE /
-              TYPESCRIPT
+              {settings.stats.products_shipped} PRODUCTS SHIPPED · {settings.stats.years_building} YEARS
+              BUILDING · BRAND IDENTITY · WEBSITES · WEB APPS · REPLIES{' '}
+              {settings.stats.response_time}
             </MonoLabel>
           </div>
         </div>
       </section>
 
-      {/* ---------- SELECTED WORK ---------- */}
+      {/* ---------- SERVICES ---------- */}
       <section className="border-t border-[var(--steel)]">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-8 py-24">
           <Reveal className="flex items-end justify-between gap-6 mb-14">
             <div>
-              <MonoLabel>SELECTED WORK — 01</MonoLabel>
+              <MonoLabel>WHAT I DO — {num('services')}</MonoLabel>
               <h2 className="mt-4 font-display text-4xl sm:text-5xl text-[var(--platinum)]">
-                Products, not promises.
+                Everything your business needs online.
               </h2>
             </div>
             <Link
-              href="/work"
+              href="/services"
               className="hidden sm:flex items-center gap-2 mono-label text-[var(--mist)] hover:text-[var(--platinum)] transition-colors shrink-0"
             >
-              View all work <ArrowRight className="w-4 h-4" />
+              All services <ArrowRight className="w-4 h-4" />
             </Link>
           </Reveal>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {featured.map((project, i) => (
-              <Reveal key={project.id} delay={i * 80}>
-                <ProjectCard project={project} index={i} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-[var(--steel)] border border-[var(--steel)] rounded-md overflow-hidden">
+            {SERVICES.map((s, i) => (
+              <Reveal key={s.key} delay={(i % 3) * 80} className="bg-[var(--obsidian)]">
+                <Link href={`/hire?service=${s.key}`} className="group block h-full p-8 hover:bg-[var(--graphite)] transition-colors">
+                  <div className="h-px w-8 bg-[var(--silver)] mb-6" />
+                  <h3 className="font-display text-xl text-[var(--platinum)]">
+                    {s.title}
+                    {s.monthly && <span className="ml-2 mono-label text-[var(--mist)] align-middle">MONTHLY</span>}
+                  </h3>
+                  <p className="mt-3 text-sm text-[var(--mist)] leading-relaxed">{s.summary}</p>
+                  <span className="mt-5 inline-flex items-center gap-1.5 mono-label text-[var(--silver)] group-hover:text-[var(--white)]">
+                    Start <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
+                </Link>
               </Reveal>
             ))}
           </div>
-
-          <Link
-            href="/work"
-            className="mt-10 sm:hidden flex items-center justify-center gap-2 mono-label text-[var(--mist)] border border-[var(--steel)] rounded-md py-3.5"
-          >
-            View all work <ArrowRight className="w-4 h-4" />
-          </Link>
         </div>
       </section>
+
+      {/* ---------- SELECTED WORK ---------- */}
+      {featured.length > 0 && (
+        <section className="border-t border-[var(--steel)]">
+          <div className="max-w-[1200px] mx-auto px-6 lg:px-8 py-24">
+            <Reveal className="flex items-end justify-between gap-6 mb-14">
+              <div>
+                <MonoLabel>SELECTED WORK — {num('work')}</MonoLabel>
+                <h2 className="mt-4 font-display text-4xl sm:text-5xl text-[var(--platinum)]">
+                  Products, not promises.
+                </h2>
+              </div>
+              <Link
+                href="/work"
+                className="hidden sm:flex items-center gap-2 mono-label text-[var(--mist)] hover:text-[var(--platinum)] transition-colors shrink-0"
+              >
+                View all work <ArrowRight className="w-4 h-4" />
+              </Link>
+            </Reveal>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {featured.map((project, i) => (
+                <Reveal key={project.id} delay={i * 80}>
+                  <ProjectCard project={project} index={i} />
+                </Reveal>
+              ))}
+            </div>
+
+            <Link
+              href="/work"
+              className="mt-10 sm:hidden flex items-center justify-center gap-2 mono-label text-[var(--mist)] border border-[var(--steel)] rounded-md py-3.5"
+            >
+              View all work <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/* ---------- SELECTED DESIGNS ---------- */}
       {featuredDesigns.length > 0 && (
@@ -164,7 +209,7 @@ export default async function HomePage() {
           <div className="max-w-[1200px] mx-auto px-6 lg:px-8 py-24">
             <Reveal className="flex items-end justify-between gap-6 mb-14">
               <div>
-                <MonoLabel>SELECTED DESIGNS — 02</MonoLabel>
+                <MonoLabel>SELECTED DESIGNS — {num('designs')}</MonoLabel>
                 <h2 className="mt-4 font-display text-4xl sm:text-5xl text-[var(--platinum)]">
                   The craft, up close.
                 </h2>
@@ -195,23 +240,8 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ---------- CAPABILITIES ---------- */}
-      <section className="border-t border-[var(--steel)]">
-        <div className="max-w-[1200px] mx-auto px-6 lg:px-8 py-24">
-          <Reveal>
-            <MonoLabel>WHAT I DO — {featuredDesigns.length > 0 ? '03' : '02'}</MonoLabel>
-          </Reveal>
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-px bg-[var(--steel)] border border-[var(--steel)] rounded-md overflow-hidden">
-            {CAPABILITIES.map((cap, i) => (
-              <Reveal key={cap.title} delay={i * 80} className="bg-[var(--obsidian)] p-8">
-                <div className="h-px w-8 bg-[var(--silver)] mb-6" />
-                <h3 className="font-display text-xl text-[var(--platinum)]">{cap.title}</h3>
-                <p className="mt-3 text-sm text-[var(--mist)] leading-relaxed">{cap.body}</p>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* ---------- TESTIMONIALS ---------- */}
+      <Testimonials items={testimonials} label={`KIND WORDS — ${num('testimonials')}`} />
 
       {/* ---------- PROOF / NUMBERS BAND ---------- */}
       <section className="border-t border-b border-[var(--steel)] bg-[var(--graphite)]">
@@ -229,16 +259,13 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ---------- MANIFESTO ---------- */}
+      {/* ---------- APPROACH (editable in Settings) ---------- */}
       <section className="border-t border-[var(--steel)]">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-8 py-24">
           <Reveal className="max-w-3xl">
-            <MonoLabel>THE APPROACH — {featuredDesigns.length > 0 ? '04' : '03'}</MonoLabel>
-            <p className="mt-8 font-display text-2xl sm:text-3xl leading-snug text-[var(--platinum)]">
-              Most engineers wait for a spec. I&apos;ve been the founder, the designer, and the
-              engineer on everything I&apos;ve shipped — which means I don&apos;t just write code,
-              I make products exist. Self-taught, starting on a phone in Nigeria, now building
-              systems used in production.{' '}
+            <MonoLabel>THE APPROACH — {num('approach')}</MonoLabel>
+            <p className="mt-8 font-display text-2xl sm:text-3xl leading-snug text-[var(--platinum)] whitespace-pre-line">
+              {settings.home_approach}{' '}
               <span className="text-[var(--silver)]">Massive thoughts. Massive execution.</span>
             </p>
           </Reveal>
@@ -250,7 +277,7 @@ export default async function HomePage() {
         <div className="max-w-[1200px] mx-auto px-6 lg:px-8 py-28 text-center">
           <Reveal>
             <h2 className="font-display text-4xl sm:text-5xl text-[var(--platinum)]">
-              Have something worth building?
+              Ready to look the part online?
             </h2>
             <p className="mt-5 text-lg text-[var(--mist)]">
               Tell me what you need. I&apos;ll reply within 24 hours.
@@ -259,7 +286,7 @@ export default async function HomePage() {
               href="/hire"
               className="mt-10 inline-block rounded-md border border-[var(--silver)] px-8 py-4 text-sm font-medium text-[var(--white)] hover:bg-[var(--white)] hover:text-[var(--obsidian)] transition-colors"
             >
-              Start a project
+              Start your project
             </Link>
           </Reveal>
         </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Plus, ArrowUp, ArrowDown } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { checkSave } from '@/lib/admin-client';
 import { MonoLabel } from '@/components/site/MonoLabel';
 import type { Design } from '@/types';
 
@@ -11,24 +12,27 @@ export default function DesignsAdmin() {
   const [rows, setRows] = useState<Design[]>([]);
   const [loading, setLoading] = useState(true);
 
-  async function load() {
-    const supabase = createClient();
-    const { data } = await supabase
+  function load() {
+    return createClient()
       .from('designs')
       .select('*')
       .order('sort_order', { ascending: true })
-      .order('created_at', { ascending: false });
-    setRows((data || []) as unknown as Design[]);
-    setLoading(false);
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        setRows((data || []) as unknown as Design[]);
+        setLoading(false);
+      });
   }
   useEffect(() => {
     load();
   }, []);
 
   async function toggle(id: string, field: 'featured' | 'published', value: boolean) {
-    setRows((rs) => rs.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
+    const apply = (v: boolean) => setRows((rs) => rs.map((r) => (r.id === id ? { ...r, [field]: v } : r)));
+    apply(value);
     const supabase = createClient();
-    await supabase.from('designs').update({ [field]: value } as never).eq('id', id);
+    const res = await supabase.from('designs').update({ [field]: value } as never).eq('id', id);
+    checkSave(res, { revert: () => apply(!value) });
   }
 
   const [saving, setSaving] = useState(false);
@@ -40,14 +44,16 @@ export default function DesignsAdmin() {
     const next = [...rows];
     [next[index], next[target]] = [next[target], next[index]];
     const reindexed = next.map((r, i) => ({ ...r, sort_order: i }));
+    const before = rows;
     setRows(reindexed);
     setSaving(true);
     const supabase = createClient();
-    await Promise.all(
+    const results = await Promise.all(
       reindexed.map((r) =>
         supabase.from('designs').update({ sort_order: r.sort_order } as never).eq('id', r.id)
       )
     );
+    checkSave(results.find((r) => r.error) ?? { error: null }, { revert: () => setRows(before) });
     setSaving(false);
   }
 
