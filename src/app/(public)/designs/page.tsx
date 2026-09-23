@@ -4,10 +4,13 @@ import { Reveal } from '@/components/site/Reveal';
 import { DesignFilter } from '@/components/site/DesignFilter';
 import { fetchDesigns } from '@/lib/data/queries';
 
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: 'Designs',
   description:
     'Visual design work by Aniekan Israel — brand identity, posters, social media, UI, and more. The craft behind the products.',
+  alternates: { canonical: '/designs' },
 };
 
 export default async function DesignsPage() {

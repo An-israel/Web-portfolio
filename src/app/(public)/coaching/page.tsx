@@ -4,13 +4,17 @@ import { MonoLabel } from '@/components/site/MonoLabel';
 import { Reveal } from '@/components/site/Reveal';
 import { PulseLine } from '@/components/site/PulseLine';
 import { EnrollButton } from '@/components/site/EnrollButton';
+import { Paragraphs } from '@/components/site/Paragraphs';
 import { formatNaira } from '@/lib/format';
 import { fetchCourses, fetchSiteSettings } from '@/lib/data/queries';
+
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: 'Coaching',
   description:
     'Learn directly from Aniekan Israel — web development, graphic design, content & copywriting, and videography. Practical, project-based training that gets you job-ready.',
+  alternates: { canonical: '/coaching' },
 };
 
 export default async function CoachingPage() {
@@ -81,9 +85,9 @@ export default async function CoachingPage() {
                     </div>
 
                     {course.description && (
-                      <p className="mt-5 text-sm text-[var(--mist)] leading-relaxed">
-                        {course.description}
-                      </p>
+                      <div className="mt-5 space-y-3 text-sm text-[var(--mist)] leading-relaxed">
+                        <Paragraphs text={course.description} />
+                      </div>
                     )}
 
                     {course.curriculum.length > 0 && (
@@ -103,6 +107,7 @@ export default async function CoachingPage() {
                     <div className="mt-8 pt-2 flex-1 flex items-end">
                       <div className="w-full">
                         <EnrollButton
+                          courseId={course.id}
                           courseTitle={course.title}
                           price={course.price_naira}
                           payment={payment}

@@ -1,24 +1,19 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Check, ArrowLeft, ArrowRight } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { Check, ArrowLeft, ArrowRight, MessageCircle } from 'lucide-react';
 import { MonoLabel } from '@/components/site/MonoLabel';
 import { PulseLine } from '@/components/site/PulseLine';
 import { cn } from '@/lib/utils';
+import { HIRE_PROJECT_TYPES } from '@/lib/data/services';
+import { whatsAppTo } from '@/lib/brief';
 import type { InquiryProjectType, InquiryTimeline, SiteSettings } from '@/types';
 
-const PROJECT_TYPES: InquiryProjectType[] = [
-  'AI Product',
-  'Full-Stack Build',
-  'MVP / Zero-to-One',
-  'Consulting',
-  'Full-Time Role',
-  'Other',
-];
-
+const ROLE_LABEL = HIRE_PROJECT_TYPES.find((t) => t.key === 'role')!.label;
 const TIMELINES: InquiryTimeline[] = ['ASAP', '2–4 weeks', '1–3 months', 'Flexible'];
-const HOW_FOUND = ['GitHub', 'X', 'LinkedIn', 'Referral', 'Search', 'Other'];
+const HOW_FOUND = ['Instagram', 'WhatsApp', 'Referral', 'Google', 'LinkedIn', 'X', 'GitHub', 'Other'];
 
 interface FormState {
   project_type: InquiryProjectType | '';
@@ -47,16 +42,22 @@ const EMPTY: FormState = {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function HireForm({ settings }: { settings: SiteSettings }) {
-  const [step, setStep] = useState(1);
-  const [form, setForm] = useState<FormState>(EMPTY);
+  // /hire?service=store etc. preselects what they need (links from /services).
+  const service = useSearchParams().get('service');
+  const preset = HIRE_PROJECT_TYPES.find((t) => t.key === service);
+  const [step, setStep] = useState(preset ? 2 : 1);
+  const [form, setForm] = useState<FormState>({ ...EMPTY, project_type: preset?.label ?? '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [done, setDone] = useState(false);
   const [honeypot, setHoneypot] = useState('');
-  const mountedAt = useRef(Date.now());
+  const mountedAt = useRef(0);
+  useEffect(() => {
+    mountedAt.current = Date.now();
+  }, []);
 
-  const isSalaryRole = form.project_type === 'Full-Time Role';
+  const isSalaryRole = form.project_type === ROLE_LABEL;
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -85,28 +86,6 @@ export function HireForm({ settings }: { settings: SiteSettings }) {
   }
   function back() {
     setStep((s) => Math.max(1, s - 1));
-  }
-
-  function mailtoFallback(payload: Record<string, unknown>) {
-    try {
-      const body = [
-        `Name: ${payload.full_name}`,
-        `Email: ${payload.email}`,
-        `Company: ${payload.company ?? '—'}`,
-        `Role: ${payload.role_at_company ?? '—'}`,
-        `Project type: ${payload.project_type}`,
-        `Budget: ${payload.budget_range ?? '—'}`,
-        `Timeline: ${payload.timeline ?? '—'}`,
-        `How found: ${payload.how_found ?? '—'}`,
-        '',
-        String(payload.description ?? ''),
-      ].join('\n');
-      window.location.href = `mailto:${settings.email}?subject=${encodeURIComponent(
-        `New inquiry — ${payload.project_type}`
-      )}&body=${encodeURIComponent(body)}`;
-    } catch {
-      /* ignore */
-    }
   }
 
   async function submit() {
@@ -144,10 +123,8 @@ export function HireForm({ settings }: { settings: SiteSettings }) {
       if (!res.ok) throw new Error(String(res.status));
       setDone(true);
     } catch {
-      // API unavailable (e.g. backend not yet configured): fall back to email
-      // so no inquiry is lost, and still confirm to the visitor.
-      mailtoFallback(payload);
-      setDone(true);
+      // Never claim success when it wasn't saved — offer WhatsApp instead.
+      setSubmitError('failed');
     } finally {
       setSubmitting(false);
     }
@@ -166,6 +143,16 @@ export function HireForm({ settings }: { settings: SiteSettings }) {
     ],
     [form, isSalaryRole]
   );
+
+  const whatsAppSummary = [
+    `Hi Aniekan, I tried to send this from your website:`,
+    `Need: ${form.project_type}`,
+    `Budget: ${isSalaryRole ? 'Salary role' : form.budget_range || '—'}`,
+    `Timeline: ${form.timeline || '—'}`,
+    `Name: ${form.full_name}${form.company ? ` (${form.company})` : ''}`,
+    '',
+    form.description,
+  ].join('\n');
 
   if (done) {
     return (
@@ -233,9 +220,9 @@ export function HireForm({ settings }: { settings: SiteSettings }) {
             <div>
               <MonoLabel>WHAT DO YOU NEED?</MonoLabel>
               <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {PROJECT_TYPES.map((t) => (
+                {HIRE_PROJECT_TYPES.map(({ key, label: t }) => (
                   <button
-                    key={t}
+                    key={key}
                     onClick={() => set('project_type', t)}
                     className={cn(
                       'text-left rounded-md border p-4 transition-colors',
@@ -289,14 +276,14 @@ export function HireForm({ settings }: { settings: SiteSettings }) {
                   TELL ME ABOUT IT
                 </label>
                 <p className="mt-1 text-sm text-[var(--mist)]">
-                  What are you building, who is it for, and what does success look like?
+                  What does your business do, what do you need, and what does success look like?
                 </p>
                 <textarea
                   id="description"
                   rows={5}
                   value={form.description}
                   onChange={(e) => set('description', e.target.value)}
-                  className="mt-3 w-full rounded-md border border-[var(--steel)] bg-[var(--graphite)] px-4 py-3 text-sm text-[var(--platinum)] placeholder:text-[var(--mist)] focus:border-[var(--silver)] focus:outline-none resize-none"
+                  className="mt-3 w-full rounded-md border border-[var(--steel)] bg-[var(--graphite)] px-4 py-3 text-sm text-[var(--platinum)] placeholder:text-[var(--mist)] focus:border-[var(--silver)] focus:outline-none resize-y"
                   placeholder="A few sentences is plenty."
                 />
                 {errors.description && <ErrorLine>{errors.description}</ErrorLine>}
@@ -351,7 +338,27 @@ export function HireForm({ settings }: { settings: SiteSettings }) {
                   </div>
                 ))}
               </dl>
-              {submitError && <ErrorLine>{submitError}</ErrorLine>}
+              {submitError === 'failed' ? (
+                <div className="mt-6 rounded-md border border-[var(--danger)]/50 p-4">
+                  <p className="text-sm text-[var(--platinum)]">
+                    Your message didn&apos;t send — nothing was saved. Please try again, or send it to me
+                    directly on WhatsApp (your answers are filled in for you).
+                  </p>
+                  <a
+                    href={whatsAppTo(settings.whatsapp_number, whatsAppSummary)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 inline-flex items-center gap-2 rounded-md bg-[#25D366] text-black px-5 py-3 text-sm font-semibold"
+                  >
+                    <MessageCircle className="w-4 h-4" /> Send on WhatsApp
+                  </a>
+                  <p className="mt-3 text-sm text-[var(--mist)]">
+                    Or email <span className="text-[var(--platinum)] select-all">{settings.email}</span>
+                  </p>
+                </div>
+              ) : (
+                submitError && <ErrorLine>{submitError}</ErrorLine>
+              )}
             </div>
           )}
 

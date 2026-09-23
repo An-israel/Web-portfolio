@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { MonoLabel } from '@/components/site/MonoLabel';
 import type { Design } from '@/types';
 
@@ -10,16 +11,18 @@ export function DesignCard({ design }: { design: Design }) {
     >
       <div className="relative aspect-[4/3] bg-[var(--obsidian)] overflow-hidden">
         {design.cover_image_url ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
+          <Image
             src={design.cover_image_url}
             alt={design.title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-            loading="lazy"
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <span className="metal-text font-display text-4xl">AI</span>
+          <div className="w-full h-full flex items-center justify-center" aria-hidden="true">
+            <span className="font-display text-[5rem] leading-none text-[var(--steel)] select-none">
+              {design.title.charAt(0)}
+            </span>
           </div>
         )}
         <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-[var(--obsidian)] to-transparent">

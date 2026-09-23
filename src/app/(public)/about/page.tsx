@@ -4,45 +4,24 @@ import { ArrowRight } from 'lucide-react';
 import { MonoLabel } from '@/components/site/MonoLabel';
 import { Reveal } from '@/components/site/Reveal';
 import { fetchSiteSettings } from '@/lib/data/queries';
+import { parsePipeLines, parseToolbox } from '@/lib/data/site';
+
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: 'About',
   description:
     'Aniekan Israel — a self-taught designer and engineer shipping production software and design work end to end. Multi-tenant SaaS, AI pipelines, brand systems, and interfaces used by real people.',
+  alternates: { canonical: '/about' },
 };
-
-const PRINCIPLES = [
-  {
-    title: 'Architecture first',
-    body: 'Decisions about data, security, and structure come before the first pixel or component. It’s cheaper to think than to rewrite.',
-  },
-  {
-    title: 'Design and code are one craft',
-    body: 'I don’t hand a design off to an engineer — I’m both. The interface and the data model get decided together, so the product feels whole.',
-  },
-  {
-    title: 'Ship, then sharpen',
-    body: 'A live product teaches more than a perfect plan. I get it real, then refine against reality.',
-  },
-];
-
-const TOOLBOX: { group: string; items: string[] }[] = [
-  { group: 'Design', items: ['Figma', 'Brand Identity', 'UI/UX', 'Typography', 'Social / Print'] },
-  { group: 'Frontend', items: ['React', 'Next.js', 'TypeScript', 'Tailwind'] },
-  { group: 'Backend', items: ['Supabase', 'PostgreSQL', 'Node', 'Edge Functions', 'RLS'] },
-  { group: 'AI', items: ['LLM APIs', 'Prompt systems', 'Agent orchestration', 'Image pipelines'] },
-];
-
-const TIMELINE = [
-  { year: '2022', milestone: 'Designing on a phone.' },
-  { year: '2024', milestone: 'First full products — shipped through the blackouts.' },
-  { year: '2025', milestone: 'SkryveAI, NexxosHQ, SceneForge.' },
-  { year: '2026', milestone: 'Available for world-class teams.' },
-];
 
 export default async function AboutPage() {
   const settings = await fetchSiteSettings();
   const paragraphs = settings.about_story.split('\n').filter((p) => p.trim().length > 0);
+  // Editable in admin Settings.
+  const principles = parsePipeLines(settings.about_principles);
+  const toolbox = parseToolbox(settings.about_toolbox);
+  const timeline = parsePipeLines(settings.about_timeline);
 
   return (
     <>
@@ -101,11 +80,11 @@ export default async function AboutPage() {
             <MonoLabel>HOW I WORK</MonoLabel>
           </Reveal>
           <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
-            {PRINCIPLES.map((p, i) => (
-              <Reveal key={p.title} delay={i * 80} className="rounded-md border border-[var(--steel)] bg-[var(--graphite)] p-7">
+            {principles.map(([title, body], i) => (
+              <Reveal key={title} delay={i * 80} className="rounded-md border border-[var(--steel)] bg-[var(--graphite)] p-7">
                 <div className="h-px w-8 bg-[var(--silver)] mb-6" />
-                <h3 className="font-display text-xl text-[var(--platinum)]">{p.title}</h3>
-                <p className="mt-3 text-sm text-[var(--mist)] leading-relaxed">{p.body}</p>
+                <h3 className="font-display text-xl text-[var(--platinum)]">{title}</h3>
+                <p className="mt-3 text-sm text-[var(--mist)] leading-relaxed">{body}</p>
               </Reveal>
             ))}
           </div>
@@ -117,7 +96,7 @@ export default async function AboutPage() {
             <MonoLabel>TOOLBOX</MonoLabel>
           </Reveal>
           <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {TOOLBOX.map((t, i) => (
+            {toolbox.map((t, i) => (
               <Reveal key={t.group} delay={i * 60}>
                 <p className="font-display text-lg text-[var(--platinum)] mb-4">{t.group}</p>
                 <div className="flex flex-wrap gap-2">
@@ -141,11 +120,11 @@ export default async function AboutPage() {
             <MonoLabel>TIMELINE</MonoLabel>
           </Reveal>
           <div className="mt-10 border-l border-[var(--steel)] pl-8 space-y-8">
-            {TIMELINE.map((t, i) => (
-              <Reveal key={t.year} delay={i * 60} className="relative">
+            {timeline.map(([year, milestone], i) => (
+              <Reveal key={`${year}-${i}`} delay={i * 60} className="relative">
                 <span className="absolute -left-[33px] top-1.5 w-2 h-2 rounded-full bg-[var(--silver)]" />
-                <MonoLabel>{t.year}</MonoLabel>
-                <p className="mt-1.5 text-lg text-[var(--platinum)]">{t.milestone}</p>
+                <MonoLabel>{year}</MonoLabel>
+                <p className="mt-1.5 text-lg text-[var(--platinum)]">{milestone}</p>
               </Reveal>
             ))}
           </div>
@@ -155,7 +134,7 @@ export default async function AboutPage() {
         <section className="py-20 border-t border-[var(--steel)] text-center">
           <Reveal>
             <h2 className="font-display text-3xl sm:text-4xl text-[var(--platinum)]">
-              Building for a world-class team next.
+              Let&apos;s build your next project.
             </h2>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
               <Link

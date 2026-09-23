@@ -4,9 +4,12 @@ import { Reveal } from '@/components/site/Reveal';
 import { WorkFilter } from '@/components/site/WorkFilter';
 import { fetchAllProjects } from '@/lib/data/queries';
 
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: 'Work',
   description: 'Products, not promises. Everything here is real, built end-to-end by Aniekan Israel.',
+  alternates: { canonical: '/work' },
 };
 
 export default async function WorkIndexPage() {

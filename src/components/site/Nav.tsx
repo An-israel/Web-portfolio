@@ -7,6 +7,7 @@ import { Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_LINKS = [
+  { href: '/services', label: 'Services' },
   { href: '/work', label: 'Work' },
   { href: '/designs', label: 'Designs' },
   { href: '/coaching', label: 'Coaching' },
@@ -32,10 +33,7 @@ export function Nav() {
     };
   }, [mobileOpen]);
 
-  // close mobile menu on route change
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
+  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   return (
     <>
@@ -60,7 +58,13 @@ export function Nav() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="mono-label text-[var(--mist)] hover:text-[var(--platinum)] transition-colors"
+                aria-current={isActive(link.href) ? 'page' : undefined}
+                className={cn(
+                  'mono-label transition-colors',
+                  isActive(link.href)
+                    ? 'text-[var(--white)] underline underline-offset-8 decoration-[var(--silver)]'
+                    : 'text-[var(--mist)] hover:text-[var(--platinum)]'
+                )}
               >
                 {link.label}
               </Link>
@@ -87,18 +91,23 @@ export function Nav() {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div className="fixed inset-0 z-40 bg-[var(--obsidian)] pt-24 px-6 md:hidden flex flex-col gap-1">
-          {NAV_LINKS.map((link, i) => (
+          {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="py-5 border-b border-[var(--steel)] font-display text-3xl text-[var(--platinum)] reveal is-visible"
-              style={{ transitionDelay: `${i * 60}ms` }}
+              onClick={() => setMobileOpen(false)}
+              aria-current={isActive(link.href) ? 'page' : undefined}
+              className={cn(
+                'py-5 border-b border-[var(--steel)] font-display text-3xl',
+                isActive(link.href) ? 'text-[var(--white)]' : 'text-[var(--platinum)]/80'
+              )}
             >
               {link.label}
             </Link>
           ))}
           <Link
             href="/hire"
+            onClick={() => setMobileOpen(false)}
             className="mt-8 text-center mono-label text-[var(--white)] border border-[var(--silver)] rounded-md py-4"
           >
             Hire Me

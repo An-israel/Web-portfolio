@@ -1,16 +1,24 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { MonoLabel } from '@/components/site/MonoLabel';
 import { PulseLine } from '@/components/site/PulseLine';
+import { Paragraphs } from '@/components/site/Paragraphs';
 import { fetchDesignBySlug } from '@/lib/data/queries';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-export const dynamic = 'force-dynamic';
+// Rendered on first visit, then cached; admin saves refresh it.
+export const revalidate = 60;
+
+// None prebuilt: each page is rendered on its first visit, then cached (ISR).
+export async function generateStaticParams() {
+  return [];
+}
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
@@ -19,7 +27,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: `${design.title} — Design`,
     description: design.summary || `${design.category} design by Aniekan Israel.`,
-    openGraph: design.cover_image_url ? { images: [design.cover_image_url] } : undefined,
+    alternates: { canonical: `/designs/${design.slug}` },
   };
 }
 
@@ -60,11 +68,14 @@ export default async function DesignDetail({ params }: PageProps) {
       {design.cover_image_url && (
         <section className="border-b border-[var(--steel)] bg-[var(--graphite)]">
           <div className="max-w-[1100px] mx-auto px-6 lg:px-8 py-12">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={design.cover_image_url}
               alt={design.title}
-              className="w-full rounded-md border border-[var(--steel)]"
+              width={1600}
+              height={1200}
+              sizes="(max-width: 1100px) 100vw, 1040px"
+              priority
+              className="w-full h-auto rounded-md border border-[var(--steel)]"
             />
           </div>
         </section>
@@ -89,8 +100,8 @@ export default async function DesignDetail({ params }: PageProps) {
         <section className="border-b border-[var(--steel)]">
           <div className="max-w-[760px] mx-auto px-6 lg:px-8 py-16">
             <MonoLabel>THE STORY</MonoLabel>
-            <div className="mt-5 text-lg text-[var(--platinum)] leading-relaxed whitespace-pre-wrap">
-              {design.story}
+            <div className="mt-5 space-y-5 text-lg text-[var(--platinum)] leading-relaxed">
+              <Paragraphs text={design.story} />
             </div>
           </div>
         </section>
@@ -102,13 +113,14 @@ export default async function DesignDetail({ params }: PageProps) {
           <div className="max-w-[1100px] mx-auto px-6 lg:px-8 py-12 space-y-8">
             <MonoLabel>GALLERY</MonoLabel>
             {design.gallery_urls.map((url, i) => (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                key={i}
+              <Image
+                key={url}
                 src={url}
                 alt={`${design.title} — ${i + 1}`}
-                className="w-full rounded-md border border-[var(--steel)]"
-                loading="lazy"
+                width={1600}
+                height={1200}
+                sizes="(max-width: 1100px) 100vw, 1040px"
+                className="w-full h-auto rounded-md border border-[var(--steel)]"
               />
             ))}
           </div>

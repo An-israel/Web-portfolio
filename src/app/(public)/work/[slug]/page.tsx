@@ -1,35 +1,47 @@
-import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import Link from 'next/link';
-import Image from 'next/image';
-import { ArrowLeft, ArrowRight, ExternalLink } from 'lucide-react';
-import { MonoLabel } from '@/components/site/MonoLabel';
-import { fetchAllProjects, fetchProjectBySlug, allProjectSlugs } from '@/lib/data/queries';
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
+import { ArrowLeft, ArrowRight, ExternalLink, Code2 } from "lucide-react";
+import { MonoLabel } from "@/components/site/MonoLabel";
+import { Paragraphs } from "@/components/site/Paragraphs";
+import { fetchAllProjects, fetchProjectBySlug } from "@/lib/data/queries";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-// Seed slugs are prerendered; admin-added slugs render on demand.
-export function generateStaticParams() {
-  return allProjectSlugs();
-}
-export const dynamicParams = true;
+// Rendered on first visit, then cached; admin saves refresh it.
+export const revalidate = 60;
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+// None prebuilt: each page is rendered on its first visit, then cached (ISR).
+export async function generateStaticParams() {
+  return [];
+}
+
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const project = await fetchProjectBySlug(slug);
-  if (!project) return { title: 'Not found' };
+  if (!project) return { title: "Not found" };
   return {
     title: project.title,
     description: project.one_liner,
+    alternates: { canonical: `/work/${project.slug}` },
     openGraph: {
       title: `${project.title} — Aniekan Israel`,
-      description: project.one_liner,
-      images: project.cover_image_url ? [project.cover_image_url] : undefined,
+      description: project.one_liner ?? undefined,
     },
   };
 }
+
+const SECTIONS = [
+  ["THE PROBLEM", "Why it needed to exist.", "problem"],
+  ["THE ARCHITECTURE", "How it’s built.", "architecture"],
+  ["THE BUILD", "The hard parts.", "build_notes"],
+  ["THE OUTCOME", "What shipped.", "outcome"],
+] as const;
 
 function Section({
   label,
@@ -45,9 +57,13 @@ function Section({
       <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-8">
         <div>
           <MonoLabel>{label}</MonoLabel>
-          <h2 className="mt-3 font-display text-2xl text-[var(--platinum)]">{title}</h2>
+          <h2 className="mt-3 font-display text-2xl text-[var(--platinum)]">
+            {title}
+          </h2>
         </div>
-        <div className="prose-obsidian text-[var(--mist)]">{children}</div>
+        <div className="prose-obsidian text-[var(--mist)] space-y-4">
+          {children}
+        </div>
       </div>
     </section>
   );
@@ -55,7 +71,10 @@ function Section({
 
 export default async function CaseStudyPage({ params }: PageProps) {
   const { slug } = await params;
-  const [project, all] = await Promise.all([fetchProjectBySlug(slug), fetchAllProjects()]);
+  const [project, all] = await Promise.all([
+    fetchProjectBySlug(slug),
+    fetchAllProjects(),
+  ]);
   if (!project) notFound();
 
   const idx = all.findIndex((p) => p.slug === project.slug);
@@ -77,15 +96,26 @@ export default async function CaseStudyPage({ params }: PageProps) {
       <h1 className="mt-8 font-display text-5xl sm:text-6xl text-[var(--platinum)]">
         {project.title}
       </h1>
-      <p className="mt-5 text-lg text-[var(--mist)] max-w-2xl">{project.one_liner}</p>
+      <p className="mt-5 text-lg text-[var(--mist)] max-w-2xl">
+        {project.one_liner}
+      </p>
 
       {/* Meta row */}
       <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
-        <MonoLabel>ROLE — {project.role.toUpperCase()}</MonoLabel>
-        <span className="h-3 w-px bg-[var(--steel)] hidden sm:block" />
-        <MonoLabel>YEAR — {project.year}</MonoLabel>
-        <span className="h-3 w-px bg-[var(--steel)] hidden sm:block" />
-        <MonoLabel>STATUS — {project.status.toUpperCase()}</MonoLabel>
+        {[
+          project.role && `ROLE — ${project.role.toUpperCase()}`,
+          project.year && `YEAR — ${project.year}`,
+          project.status && `STATUS — ${project.status.toUpperCase()}`,
+        ]
+          .filter(Boolean)
+          .map((m, i) => (
+            <span key={m as string} className="inline-flex items-center gap-6">
+              {i > 0 && (
+                <span className="h-3 w-px bg-[var(--steel)] hidden sm:block" />
+              )}
+              <MonoLabel>{m}</MonoLabel>
+            </span>
+          ))}
         {project.live_url && (
           <a
             href={project.live_url}
@@ -94,6 +124,16 @@ export default async function CaseStudyPage({ params }: PageProps) {
             className="inline-flex items-center gap-1.5 mono-label text-[var(--white)] hover:text-[var(--silver)] transition-colors"
           >
             VISIT LIVE <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        )}
+        {project.github_url && (
+          <a
+            href={project.github_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 mono-label text-[var(--white)] hover:text-[var(--silver)] transition-colors"
+          >
+            VIEW CODE <Code2 className="w-3.5 h-3.5" />
           </a>
         )}
       </div>
@@ -120,53 +160,50 @@ export default async function CaseStudyPage({ params }: PageProps) {
 
       {/* Body */}
       <div className="mt-16">
-        <Section label="THE PROBLEM" title="Why it needed to exist.">
-          <p>{project.problem}</p>
-        </Section>
-
-        <Section label="THE ARCHITECTURE" title="How it's built.">
-          <p>{project.architecture}</p>
-        </Section>
-
-        <Section label="THE BUILD" title="The hard parts.">
-          <p>{project.build_notes}</p>
-        </Section>
-
-        <Section label="THE OUTCOME" title="What shipped.">
-          <p>{project.outcome}</p>
-        </Section>
+        {SECTIONS.map(
+          ([label, title, key]) =>
+            project[key] && (
+              <Section key={key} label={label} title={title}>
+                <Paragraphs text={project[key]} />
+              </Section>
+            ),
+        )}
 
         {/* Stack */}
-        <section className="border-t border-[var(--steel)] py-14">
-          <MonoLabel>STACK</MonoLabel>
-          <div className="mt-5 flex flex-wrap gap-2">
-            {project.stack.map((tech) => (
-              <span
-                key={tech}
-                className="mono-label text-[var(--mist)] border border-[var(--steel)] rounded px-3 py-1.5"
-              >
-                {tech}
-              </span>
-            ))}
-          </div>
-        </section>
+        {project.stack.length > 0 && (
+          <section className="border-t border-[var(--steel)] py-14">
+            <MonoLabel>STACK</MonoLabel>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {project.stack.map((tech) => (
+                <span
+                  key={tech}
+                  className="mono-label text-[var(--mist)] border border-[var(--steel)] rounded px-3 py-1.5"
+                >
+                  {tech}
+                </span>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       {/* Prev / Next */}
-      <nav className="border-t border-[var(--steel)] pt-10 grid grid-cols-2 gap-6">
-        <Link href={`/work/${prev.slug}`} className="group">
-          <MonoLabel className="text-[var(--mist)]">← PREVIOUS</MonoLabel>
-          <p className="mt-2 font-display text-lg text-[var(--platinum)] group-hover:text-[var(--white)] transition-colors">
-            {prev.title}
-          </p>
-        </Link>
-        <Link href={`/work/${next.slug}`} className="group text-right">
-          <MonoLabel className="text-[var(--mist)]">NEXT →</MonoLabel>
-          <p className="mt-2 font-display text-lg text-[var(--platinum)] group-hover:text-[var(--white)] transition-colors">
-            {next.title}
-          </p>
-        </Link>
-      </nav>
+      {all.length > 1 && (
+        <nav className="border-t border-[var(--steel)] pt-10 grid grid-cols-2 gap-6">
+          <Link href={`/work/${prev.slug}`} className="group">
+            <MonoLabel className="text-[var(--mist)]">← PREVIOUS</MonoLabel>
+            <p className="mt-2 font-display text-lg text-[var(--platinum)] group-hover:text-[var(--white)] transition-colors">
+              {prev.title}
+            </p>
+          </Link>
+          <Link href={`/work/${next.slug}`} className="group text-right">
+            <MonoLabel className="text-[var(--mist)]">NEXT →</MonoLabel>
+            <p className="mt-2 font-display text-lg text-[var(--platinum)] group-hover:text-[var(--white)] transition-colors">
+              {next.title}
+            </p>
+          </Link>
+        </nav>
+      )}
 
       {/* Hire CTA */}
       <div className="mt-16 rounded-md border border-[var(--steel)] bg-[var(--graphite)] p-10 text-center">

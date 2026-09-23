@@ -4,6 +4,7 @@ import { MonoLabel } from './MonoLabel';
 import { fetchSiteSettings } from '@/lib/data/queries';
 
 const NAV_LINKS = [
+  { href: '/services', label: 'Services' },
   { href: '/work', label: 'Work' },
   { href: '/designs', label: 'Designs' },
   { href: '/coaching', label: 'Coaching' },
@@ -94,7 +95,7 @@ export async function Footer() {
         </div>
 
         <div className="mt-14 pt-6 border-t border-[var(--steel)]">
-          <MonoLabel>© 2026 ANIEKAN ISRAEL — BUILT &amp; ENGINEERED BY ME</MonoLabel>
+          <MonoLabel>© {new Date().getFullYear()} ANIEKAN ISRAEL — BUILT &amp; ENGINEERED BY ME</MonoLabel>
         </div>
       </div>
     </footer>
