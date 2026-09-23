@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { checkSave, refreshSite } from '@/lib/admin-client';
+import { compressImage, storagePath } from '@/lib/image-compress';
 import { MonoLabel } from '@/components/site/MonoLabel';
 import type { WorkProject, ProjectCategory, ProjectStatus } from '@/types';
 
@@ -46,6 +48,7 @@ export default function ProjectEditor({ params }: { params: Promise<{ id: string
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (isNew) return;
@@ -68,12 +71,16 @@ export default function ProjectEditor({ params }: { params: Promise<{ id: string
     setD((prev) => ({ ...prev, [k]: v }));
   }
 
-  async function uploadCover(file: File) {
+  async function uploadCover(original: File) {
+    setError('');
+    setUploading(true);
+    const file = await compressImage(original);
     const supabase = createClient();
     const path = `${d.slug || slugify(d.title || 'project')}-${Date.now()}.${file.name.split('.').pop()}`;
     const { error: upErr } = await supabase.storage.from('project-media').upload(path, file, {
       upsert: true,
     });
+    setUploading(false);
     if (upErr) {
       setError(upErr.message);
       return;
@@ -117,8 +124,19 @@ export default function ProjectEditor({ params }: { params: Promise<{ id: string
 
     setSaving(false);
     if (res.error) return setError(res.error.message);
+    refreshSite();
     router.push('/admin/projects');
     router.refresh();
+  }
+
+  async function remove() {
+    if (!confirm('Delete this project permanently? (To just hide it, untick Published instead.)')) return;
+    const supabase = createClient();
+    const res = await supabase.from('projects').delete().eq('id', id);
+    if (!checkSave(res)) return;
+    const cover = storagePath(d.cover_image_url, 'project-media');
+    if (cover) await supabase.storage.from('project-media').remove([cover]);
+    router.push('/admin/projects');
   }
 
   if (loading) return <p className="text-[var(--mist)]">Loading…</p>;
@@ -209,8 +227,10 @@ export default function ProjectEditor({ params }: { params: Promise<{ id: string
               type="file"
               accept="image/*"
               onChange={(e) => e.target.files?.[0] && uploadCover(e.target.files[0])}
+              disabled={uploading}
               className="text-sm text-[var(--mist)]"
             />
+            {uploading && <p className="text-xs text-[var(--mist)]">Uploading…</p>}
           </div>
         </Row>
         <div className="flex gap-6">
@@ -234,13 +254,20 @@ export default function ProjectEditor({ params }: { params: Promise<{ id: string
 
         {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
 
-        <button
-          onClick={save}
-          disabled={saving}
-          className="rounded-md bg-[var(--white)] text-[var(--obsidian)] px-6 py-3 text-sm font-semibold disabled:opacity-60"
-        >
-          {saving ? 'Saving…' : isNew ? 'Create project' : 'Save changes'}
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={save}
+            disabled={saving || uploading}
+            className="rounded-md bg-[var(--white)] text-[var(--obsidian)] px-6 py-3 text-sm font-semibold disabled:opacity-60"
+          >
+            {saving ? 'Saving…' : isNew ? 'Create project' : 'Save changes'}
+          </button>
+          {!isNew && (
+            <button onClick={remove} className="mono-label text-[var(--danger)] hover:underline">
+              Delete
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

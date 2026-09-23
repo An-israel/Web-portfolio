@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { checkSave } from '@/lib/admin-client';
 import { MonoLabel } from '@/components/site/MonoLabel';
 import type { Testimonial } from '@/types';
 
@@ -13,13 +14,12 @@ export default function TestimonialsAdmin() {
   const [editing, setEditing] = useState<Draft | null>(null);
   const [error, setError] = useState('');
 
-  async function load() {
-    const supabase = createClient();
-    const { data } = await supabase
+  function load() {
+    return createClient()
       .from('testimonials')
       .select('*')
-      .order('sort_order', { ascending: true });
-    setRows((data || []) as unknown as Testimonial[]);
+      .order('sort_order', { ascending: true })
+      .then(({ data }) => setRows((data || []) as unknown as Testimonial[]));
   }
   useEffect(() => {
     load();
@@ -42,6 +42,7 @@ export default function TestimonialsAdmin() {
       ? await supabase.from('testimonials').update(payload).eq('id', editing.id)
       : await supabase.from('testimonials').insert(payload);
     if (res.error) return setError(res.error.message);
+    checkSave(res);
     setEditing(null);
     load();
   }
@@ -49,8 +50,8 @@ export default function TestimonialsAdmin() {
   async function remove(id: string) {
     if (!confirm('Delete this testimonial?')) return;
     const supabase = createClient();
-    await supabase.from('testimonials').delete().eq('id', id);
-    load();
+    const res = await supabase.from('testimonials').delete().eq('id', id);
+    if (checkSave(res)) load();
   }
 
   return (

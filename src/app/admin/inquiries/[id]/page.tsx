@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Copy, Mail, Archive, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { checkSave } from '@/lib/admin-client';
 import { MonoLabel } from '@/components/site/MonoLabel';
 import type { HireInquiry, InquiryStatus } from '@/types';
 
@@ -49,9 +50,11 @@ export default function InquiryDetail({ params }: { params: Promise<{ id: string
 
   async function patch(patch: Partial<HireInquiry>) {
     if (!row) return;
+    const before = row;
     setRow({ ...row, ...patch });
     const supabase = createClient();
-    await supabase.from('inquiries').update(patch).eq('id', id);
+    const res = await supabase.from('inquiries').update(patch).eq('id', id);
+    if (!checkSave(res, { revert: () => setRow(before), publicChange: false })) return;
     setSaved('Saved');
     setTimeout(() => setSaved(''), 1500);
   }
@@ -63,7 +66,8 @@ export default function InquiryDetail({ params }: { params: Promise<{ id: string
   async function remove() {
     if (!confirm('Delete this inquiry permanently?')) return;
     const supabase = createClient();
-    await supabase.from('inquiries').delete().eq('id', id);
+    const res = await supabase.from('inquiries').delete().eq('id', id);
+    if (!checkSave(res, { publicChange: false })) return;
     router.push('/admin/inquiries');
   }
 

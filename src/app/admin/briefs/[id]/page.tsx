@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Copy, Mail, MessageCircle, Trash2, FileText, ExternalLink } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { checkSave } from '@/lib/admin-client';
 import { MonoLabel } from '@/components/site/MonoLabel';
 import { useBriefPricing } from '@/components/admin/useBriefPricing';
 import { formatNaira } from '@/lib/format';
@@ -57,9 +58,11 @@ export default function BriefDetail({ params }: { params: Promise<{ id: string }
 
   async function patch(p: Partial<ClientBrief>) {
     if (!row) return;
+    const before = row;
     setRow({ ...row, ...p });
     const supabase = createClient();
-    await supabase.from('client_briefs').update(p).eq('id', id);
+    const res = await supabase.from('client_briefs').update(p).eq('id', id);
+    if (!checkSave(res, { revert: () => setRow(before), publicChange: false })) return;
     setSaved('Saved');
     setTimeout(() => setSaved(''), 1500);
   }
@@ -70,8 +73,9 @@ export default function BriefDetail({ params }: { params: Promise<{ id: string }
     const paths = (row.answers?.attachments || []).map((f) => f.path);
     const { data: stray } = await supabase.storage.from(BRIEF_BUCKET).list(row.id, { limit: 100 });
     const all = new Set([...paths, ...(stray || []).map((f) => `${row.id}/${f.name}`)]);
+    const res = await supabase.from('client_briefs').delete().eq('id', id);
+    if (!checkSave(res, { publicChange: false })) return;
     if (all.size) await supabase.storage.from(BRIEF_BUCKET).remove([...all]);
-    await supabase.from('client_briefs').delete().eq('id', id);
     router.push('/admin/briefs');
   }
 

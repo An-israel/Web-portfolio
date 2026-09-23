@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { checkSave, refreshSite } from '@/lib/admin-client';
 import { MonoLabel } from '@/components/site/MonoLabel';
 import type { Course } from '@/types';
 
@@ -86,6 +87,7 @@ export default function CourseEditor({ params }: { params: Promise<{ id: string 
 
     setSaving(false);
     if (res.error) return setError(res.error.message);
+    refreshSite();
     router.push('/admin/courses');
     router.refresh();
   }
@@ -93,7 +95,8 @@ export default function CourseEditor({ params }: { params: Promise<{ id: string 
   async function remove() {
     if (!confirm('Delete this course?')) return;
     const supabase = createClient();
-    await supabase.from('courses').delete().eq('id', id);
+    const res = await supabase.from('courses').delete().eq('id', id);
+    if (!checkSave(res)) return;
     router.push('/admin/courses');
   }
 

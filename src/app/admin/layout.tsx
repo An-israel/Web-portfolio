@@ -10,6 +10,7 @@ import {
   FolderOpen,
   Image as ImageIcon,
   GraduationCap,
+  Users,
   MessageSquareQuote,
   Settings,
   BarChart3,
@@ -19,6 +20,8 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
+import { checkSave } from '@/lib/admin-client';
+import { AdminNotices } from '@/components/admin/AdminNotices';
 import type { AvailabilityStatus } from '@/types';
 
 const NAV = [
@@ -28,6 +31,7 @@ const NAV = [
   { href: '/admin/projects', label: 'Projects', icon: FolderOpen, exact: false },
   { href: '/admin/designs', label: 'Designs', icon: ImageIcon, exact: false },
   { href: '/admin/courses', label: 'Coaching', icon: GraduationCap, exact: false },
+  { href: '/admin/enrolments', label: 'Enrolments', icon: Users, exact: false },
   { href: '/admin/testimonials', label: 'Testimonials', icon: MessageSquareQuote, exact: false },
   { href: '/admin/settings', label: 'Settings', icon: Settings, exact: false },
   { href: '/admin/analytics', label: 'Analytics', icon: BarChart3, exact: false },
@@ -57,11 +61,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [isLogin]);
 
   async function setAvail(next: AvailabilityStatus) {
+    const prev = availability;
     setAvailability(next);
     const supabase = createClient();
-    await supabase
+    const res = await supabase
       .from('site_settings')
       .upsert({ key: 'availability_status', value: next }, { onConflict: 'key' });
+    checkSave(res, { revert: () => setAvailability(prev) });
   }
 
   async function logout() {
@@ -153,6 +159,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </header>
         <main className="flex-1 p-6 lg:p-8">{children}</main>
+        <AdminNotices />
       </div>
     </div>
   );

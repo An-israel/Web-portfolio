@@ -4,69 +4,62 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { MonoLabel } from '@/components/site/MonoLabel';
 
-interface View {
-  path: string;
-  referrer: string | null;
-  created_at: string;
+type Row = { key: string; n: number };
+interface Stats {
+  total: number;
+  hire: number;
+  by_day: { day: string; n: number }[];
+  by_path: Row[];
+  by_ref: Row[];
 }
 
+const DAYS = 30;
+
 export default function AnalyticsAdmin() {
-  const [views, setViews] = useState<View[]>([]);
-  const [inqMonth, setInqMonth] = useState(0);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [inquiries, setInquiries] = useState(0);
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [now, setNow] = useState(0);
 
   useEffect(() => {
     const supabase = createClient();
-    const since = new Date(Date.now() - 30 * 864e5).toISOString();
-    const monthStart = new Date();
-    monthStart.setDate(1);
-    monthStart.setHours(0, 0, 0, 0);
-
+    const since = new Date(Date.now() - DAYS * 864e5).toISOString();
+    // Counted in the database (no row cap); inquiries use the same 30-day window.
     Promise.all([
-      supabase.from('page_views').select('path, referrer, created_at').gte('created_at', since),
-      supabase
-        .from('inquiries')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', monthStart.toISOString()),
+      supabase.rpc('page_view_stats', { since }),
+      supabase.from('inquiries').select('*', { count: 'exact', head: true }).gte('created_at', since),
     ]).then(([v, i]) => {
-      setViews((v.data || []) as View[]);
-      setInqMonth(i.count || 0);
+      if (v.error) setError('Run the 0006 migration in Supabase to enable analytics.');
+      setStats((v.data as unknown as Stats) ?? null);
+      setInquiries(i.count || 0);
+      setNow(Date.now());
       setLoading(false);
     });
   }, []);
 
-  const byDay = new Map<string, number>();
-  const byPath = new Map<string, number>();
-  const byRef = new Map<string, number>();
-  for (const v of views) {
-    const day = v.created_at.slice(0, 10);
-    byDay.set(day, (byDay.get(day) || 0) + 1);
-    byPath.set(v.path, (byPath.get(v.path) || 0) + 1);
-    const ref = v.referrer ? new URL(v.referrer, 'http://x').hostname || 'direct' : 'direct';
-    byRef.set(ref, (byRef.get(ref) || 0) + 1);
-  }
-  const days = Array.from({ length: 30 }, (_, i) => {
-    const d = new Date(Date.now() - (29 - i) * 864e5).toISOString().slice(0, 10);
+  const byDay = new Map((stats?.by_day ?? []).map((d) => [d.day, d.n]));
+  const lagosDay = (t: number) => new Date(t).toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' });
+  const days = Array.from({ length: DAYS }, (_, i) => {
+    const d = lagosDay(now - (DAYS - 1 - i) * 864e5);
     return { d, n: byDay.get(d) || 0 };
   });
   const maxDay = Math.max(1, ...days.map((d) => d.n));
-  const hireViews = byPath.get('/hire') || 0;
-  const conv = hireViews > 0 ? Math.round((inqMonth / hireViews) * 100) : 0;
-
-  const top = (m: Map<string, number>) =>
-    [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const hireViews = stats?.hire ?? 0;
+  const conv = hireViews > 0 ? Math.round((inquiries / hireViews) * 100) : 0;
 
   if (loading) return <p className="text-[var(--mist)]">Loading…</p>;
 
   return (
     <div className="max-w-4xl">
       <h1 className="font-display text-3xl text-[var(--platinum)] mb-1">Analytics</h1>
-      <MonoLabel className="text-[var(--mist)]">LAST 30 DAYS</MonoLabel>
+      <MonoLabel className="text-[var(--mist)]">LAST 30 DAYS · EXCLUDES YOUR OWN VISITS AND BOTS</MonoLabel>
+      {error && <p className="mt-4 text-sm text-[var(--warning)]">{error}</p>}
 
-      <div className="mt-8 grid grid-cols-3 gap-4">
-        <Stat label="TOTAL VIEWS" value={views.length} />
-        <Stat label="INQUIRIES (MONTH)" value={inqMonth} />
-        <Stat label="/HIRE CONVERSION" value={`${conv}%`} />
+      <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Stat label="TOTAL VIEWS" value={stats?.total ?? 0} />
+        <Stat label="INQUIRIES (30 DAYS)" value={inquiries} />
+        <Stat label="/HIRE → INQUIRY" value={`${conv}%`} />
       </div>
 
       {/* Bar chart */}
@@ -86,8 +79,8 @@ export default function AnalyticsAdmin() {
       </div>
 
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <TopList title="TOP PAGES" rows={top(byPath)} />
-        <TopList title="TOP REFERRERS" rows={top(byRef)} />
+        <TopList title="TOP PAGES" rows={(stats?.by_path ?? []).map((r) => [r.key, r.n])} />
+        <TopList title="TOP REFERRERS" rows={(stats?.by_ref ?? []).map((r) => [r.key, r.n])} />
       </div>
     </div>
   );

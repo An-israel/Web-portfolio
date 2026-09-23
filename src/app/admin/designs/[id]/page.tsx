@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { checkSave, refreshSite } from '@/lib/admin-client';
+import { compressImage, storagePath } from '@/lib/image-compress';
 import { MonoLabel } from '@/components/site/MonoLabel';
 import type { Design, DesignCategory } from '@/types';
 
@@ -72,7 +74,8 @@ export default function DesignEditor({ params }: { params: Promise<{ id: string 
     setD((prev) => ({ ...prev, [k]: v }));
   }
 
-  async function uploadImage(file: File): Promise<string | null> {
+  async function uploadImage(original: File): Promise<string | null> {
+    const file = await compressImage(original);
     const supabase = createClient();
     const base = d.slug || slugify(d.title || 'design');
     const path = `designs/${base}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${file.name
@@ -150,14 +153,20 @@ export default function DesignEditor({ params }: { params: Promise<{ id: string 
 
     setSaving(false);
     if (res.error) return setError(res.error.message);
+    refreshSite();
     router.push('/admin/designs');
     router.refresh();
   }
 
   async function remove() {
-    if (!confirm('Delete this design?')) return;
+    if (!confirm('Delete this design and its images?')) return;
     const supabase = createClient();
-    await supabase.from('designs').delete().eq('id', id);
+    const res = await supabase.from('designs').delete().eq('id', id);
+    if (!checkSave(res)) return;
+    const files = [d.cover_image_url, ...(d.gallery_urls || [])]
+      .map((u) => storagePath(u, 'project-media'))
+      .filter((p): p is string => !!p);
+    if (files.length) await supabase.storage.from('project-media').remove(files);
     router.push('/admin/designs');
   }
 
