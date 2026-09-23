@@ -26,7 +26,7 @@ export const projectSchema = z.object({
     .min(2)
     .max(200)
     .regex(/^[a-z0-9-]+$/, 'Slug must be lowercase letters, numbers, and hyphens'),
-  category: z.enum(['AI Product', 'SaaS', 'Platform']),
+  category: z.enum(['Client Website', 'AI Product', 'SaaS', 'Platform']),
   one_liner: z.string().max(300).optional().or(z.literal('')),
   problem: z.string().optional().or(z.literal('')),
   architecture: z.string().optional().or(z.literal('')),
