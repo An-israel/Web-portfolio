@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Inbox,
+  ClipboardList,
   FolderOpen,
   Image as ImageIcon,
   GraduationCap,
@@ -23,6 +24,7 @@ import type { AvailabilityStatus } from '@/types';
 const NAV = [
   { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
   { href: '/admin/inquiries', label: 'Inquiries', icon: Inbox, exact: false },
+  { href: '/admin/briefs', label: 'Client Briefs', icon: ClipboardList, exact: false },
   { href: '/admin/projects', label: 'Projects', icon: FolderOpen, exact: false },
   { href: '/admin/designs', label: 'Designs', icon: ImageIcon, exact: false },
   { href: '/admin/courses', label: 'Coaching', icon: GraduationCap, exact: false },

@@ -122,6 +122,21 @@ type DesignRow = {
   updated_at: string;
 };
 
+type ClientBriefRow = {
+  id: string;
+  token: string;
+  client_name: string;
+  client_email: string | null;
+  client_phone: string | null;
+  note: string | null;
+  status: string;
+  answers: Json | null;
+  submitted_at: string | null;
+  internal_notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 type WithDefaults<T, Optional extends keyof T> = Omit<T, Optional> &
   Partial<Pick<T, Optional>>;
 
@@ -249,6 +264,25 @@ export type Database = {
           | 'updated_at'
         >;
         Update: Partial<DesignRow>;
+        Relationships: [];
+      };
+      client_briefs: {
+        Row: ClientBriefRow;
+        Insert: WithDefaults<
+          ClientBriefRow,
+          | 'id'
+          | 'token'
+          | 'client_email'
+          | 'client_phone'
+          | 'note'
+          | 'status'
+          | 'answers'
+          | 'submitted_at'
+          | 'internal_notes'
+          | 'created_at'
+          | 'updated_at'
+        >;
+        Update: Partial<ClientBriefRow>;
         Relationships: [];
       };
     };
