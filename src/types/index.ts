@@ -2,6 +2,8 @@
 // Aniekan Israel — personal portfolio types
 // ============================================================
 
+import type { BriefAnswers, BriefStatus } from '@/lib/brief';
+
 export type ProjectCategory = 'AI Product' | 'SaaS' | 'Platform';
 export type ProjectStatus = 'Live' | 'In Development' | 'Archived';
 
@@ -219,4 +221,19 @@ export interface Inquiry {
   message: string | null;
   is_read: boolean;
   created_at: string;
+}
+
+export interface ClientBrief {
+  id: string;
+  token: string;
+  client_name: string;
+  client_email: string | null;
+  client_phone: string | null;
+  note: string | null;
+  status: BriefStatus;
+  answers: BriefAnswers | null;
+  submitted_at: string | null;
+  internal_notes: string | null;
+  created_at: string;
+  updated_at: string;
 }
