@@ -10,7 +10,7 @@ import { compressImage, storagePath } from '@/lib/image-compress';
 import { MonoLabel } from '@/components/site/MonoLabel';
 import type { WorkProject, ProjectCategory, ProjectStatus } from '@/types';
 
-const CATEGORIES: ProjectCategory[] = ['AI Product', 'SaaS', 'Platform'];
+const CATEGORIES: ProjectCategory[] = ['Client Website', 'AI Product', 'SaaS', 'Platform'];
 const STATUSES: ProjectStatus[] = ['Live', 'In Development', 'Archived'];
 
 type Draft = Partial<WorkProject> & { stackText?: string };

@@ -4,7 +4,7 @@
 
 import type { BriefAnswers, BriefStatus } from '@/lib/brief';
 
-export type ProjectCategory = 'AI Product' | 'SaaS' | 'Platform';
+export type ProjectCategory = 'Client Website' | 'AI Product' | 'SaaS' | 'Platform';
 export type ProjectStatus = 'Live' | 'In Development' | 'Archived';
 
 export interface WorkProject {

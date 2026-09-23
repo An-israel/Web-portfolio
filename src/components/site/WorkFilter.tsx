@@ -8,6 +8,7 @@ import type { ProjectCategory, WorkProject } from '@/types';
 
 const FILTERS: { label: string; value: ProjectCategory | 'All' }[] = [
   { label: 'All', value: 'All' },
+  { label: 'Client Websites', value: 'Client Website' },
   { label: 'AI Products', value: 'AI Product' },
   { label: 'SaaS', value: 'SaaS' },
   { label: 'Platforms', value: 'Platform' },

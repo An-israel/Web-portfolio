@@ -16,6 +16,8 @@ export function ogCard({
   image?: string | null;
 }) {
   const host = SITE_URL.replace(/^https?:\/\//, '');
+  // Covers kept in /public (e.g. /covers/x.png) need an absolute URL here.
+  const src = image?.startsWith('/') ? `${SITE_URL}${image}` : image;
   return new ImageResponse(
     (
       <div
@@ -41,7 +43,7 @@ export function ogCard({
             {eyebrow.toUpperCase()}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', fontSize: image ? 60 : 72, fontWeight: 700, lineHeight: 1.05, letterSpacing: -2 }}>
+            <div style={{ display: 'flex', fontSize: src ? 60 : 72, fontWeight: 700, lineHeight: 1.05, letterSpacing: -2 }}>
               {title}
             </div>
             {subtitle ? (
@@ -55,9 +57,9 @@ export function ogCard({
             ANIEKAN ISRAEL · {host.toUpperCase()}
           </div>
         </div>
-        {image ? (
+        {src ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={image} alt="" width={460} height={630} style={{ objectFit: 'cover', borderLeft: '1px solid #23262c' }} />
+          <img src={src} alt="" width={460} height={630} style={{ objectFit: 'cover', borderLeft: '1px solid #23262c' }} />
         ) : null}
       </div>
     ),
