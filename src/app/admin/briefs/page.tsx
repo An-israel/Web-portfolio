@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Copy, Plus, Tags, MessageCircle, Check } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { MonoLabel } from '@/components/site/MonoLabel';
@@ -30,6 +31,7 @@ const STATUS_COLOR: Record<BriefStatus, string> = {
 };
 
 export default function BriefsAdmin() {
+  const router = useRouter();
   const pricing = useBriefPricing();
   const [rows, setRows] = useState<ClientBrief[]>([]);
   const [loading, setLoading] = useState(true);
@@ -189,7 +191,11 @@ export default function BriefsAdmin() {
               {filtered.map((r) => {
                 const est = r.answers && pricing ? estimateBrief(r.answers, pricing) : null;
                 return (
-                  <tr key={r.id} className="hover:bg-[var(--graphite)]/60">
+                  <tr
+                    key={r.id}
+                    onClick={() => router.push(`/admin/briefs/${r.id}`)}
+                    className="cursor-pointer hover:bg-[var(--graphite)]/60"
+                  >
                     <td className="px-4 py-3">
                       <Link href={`/admin/briefs/${r.id}`} className="text-[var(--platinum)] hover:underline">
                         {r.client_name}
@@ -214,13 +220,22 @@ export default function BriefsAdmin() {
                     <td className="px-4 py-3 text-[var(--mist)]">
                       {new Date(r.created_at).toLocaleDateString('en-GB')}
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => copy(r.token)}
-                        className="mono-label text-[var(--silver)] hover:text-[var(--white)]"
-                      >
-                        {copied === r.token ? 'Copied' : 'Copy link'}
-                      </button>
+                    <td className="px-4 py-3 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      {r.answers ? (
+                        <Link
+                          href={`/admin/briefs/${r.id}`}
+                          className="inline-flex items-center rounded-md border border-[var(--silver)] px-3 py-1.5 mono-label text-[var(--white)] hover:bg-[var(--white)] hover:text-[var(--obsidian)]"
+                        >
+                          View brief
+                        </Link>
+                      ) : (
+                        <button
+                          onClick={() => copy(r.token)}
+                          className="mono-label text-[var(--silver)] hover:text-[var(--white)]"
+                        >
+                          {copied === r.token ? 'Copied' : 'Copy link'}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );
