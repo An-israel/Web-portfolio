@@ -3,9 +3,10 @@
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Copy, Mail, Archive, Trash2 } from 'lucide-react';
+import { ArrowLeft, Copy, Mail, Archive, Trash2, Download } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { checkSave } from '@/lib/admin-client';
+import { checkSave, notify } from '@/lib/admin-client';
+import { documentPdf, saveFile } from '@/lib/brief-export';
 import { MonoLabel } from '@/components/site/MonoLabel';
 import type { HireInquiry, InquiryStatus } from '@/types';
 
@@ -69,6 +70,39 @@ export default function InquiryDetail({ params }: { params: Promise<{ id: string
     const res = await supabase.from('inquiries').delete().eq('id', id);
     if (!checkSave(res, { publicChange: false })) return;
     router.push('/admin/inquiries');
+  }
+
+  async function downloadPdf() {
+    if (!row) return;
+    try {
+      const blob = await documentPdf({
+        title: `Inquiry — ${row.full_name}${row.company ? ` (${row.company})` : ''}`,
+        subtitle: `Received ${new Date(row.created_at).toLocaleString('en-GB')}`,
+        sections: [
+          {
+            title: 'Contact',
+            items: [
+              { label: 'Name', value: row.full_name },
+              { label: 'Email', value: row.email },
+              ...(row.company ? [{ label: 'Company', value: `${row.company}${row.role_at_company ? ` — ${row.role_at_company}` : ''}` }] : []),
+              ...(row.how_found ? [{ label: 'How they found you', value: row.how_found }] : []),
+            ],
+          },
+          {
+            title: 'The project',
+            items: [
+              { label: 'What they need', value: row.project_type },
+              { label: 'Budget', value: row.budget_range || '—' },
+              { label: 'Timeline', value: row.timeline || '—' },
+              { label: 'Details', value: row.description, long: true },
+            ],
+          },
+        ],
+      });
+      saveFile(blob, `inquiry-${row.full_name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`);
+    } catch (err) {
+      notify(`Couldn’t create the PDF — ${err instanceof Error ? err.message : 'try again'}`);
+    }
   }
 
   if (!row) {
@@ -191,6 +225,12 @@ export default function InquiryDetail({ params }: { params: Promise<{ id: string
           className="inline-flex items-center gap-2 mono-label rounded-md border border-[var(--steel)] px-4 py-2.5 text-[var(--mist)] hover:text-[var(--platinum)] hover:border-[var(--silver)]"
         >
           <Copy className="w-4 h-4" /> Copy email
+        </button>
+        <button
+          onClick={downloadPdf}
+          className="inline-flex items-center gap-2 mono-label rounded-md border border-[var(--steel)] px-4 py-2.5 text-[var(--mist)] hover:text-[var(--platinum)] hover:border-[var(--silver)]"
+        >
+          <Download className="w-4 h-4" /> Download PDF
         </button>
         <a
           href={mailto}

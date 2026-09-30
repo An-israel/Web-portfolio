@@ -3,9 +3,10 @@
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Copy, Mail, MessageCircle, Trash2, FileText, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Copy, Mail, MessageCircle, Trash2, FileText, ExternalLink, Download, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { checkSave } from '@/lib/admin-client';
+import { checkSave, notify } from '@/lib/admin-client';
+import { briefFileName, briefMarkdown, briefPdf, saveFile } from '@/lib/brief-export';
 import { MonoLabel } from '@/components/site/MonoLabel';
 import { useBriefPricing } from '@/components/admin/useBriefPricing';
 import { formatNaira } from '@/lib/format';
@@ -31,6 +32,8 @@ export default function BriefDetail({ params }: { params: Promise<{ id: string }
   const [notes, setNotes] = useState('');
   const [fileUrls, setFileUrls] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState('');
+  const [includePricing, setIncludePricing] = useState(false);
+  const [exporting, setExporting] = useState<'' | 'pdf' | 'md' | 'copy'>('');
 
   useEffect(() => {
     const supabase = createClient();
@@ -77,6 +80,41 @@ export default function BriefDetail({ params }: { params: Promise<{ id: string }
     if (!checkSave(res, { publicChange: false })) return;
     if (all.size) await supabase.storage.from(BRIEF_BUCKET).remove([...all]);
     router.push('/admin/briefs');
+  }
+
+  // Build the brief as a file you can keep, print or hand to Claude as the build spec.
+  async function exportBrief(kind: 'pdf' | 'md' | 'copy') {
+    if (!row?.answers) return;
+    setExporting(kind);
+    try {
+      const a = row.answers;
+      // Week-long file links, so they still work when you open the download later.
+      const paths = a.attachments.map((f) => f.path);
+      let urls: Record<string, string> = {};
+      if (paths.length) {
+        const { data: signed } = await createClient()
+          .storage.from(BRIEF_BUCKET)
+          .createSignedUrls(paths, 60 * 60 * 24 * 7);
+        urls = Object.fromEntries((signed || []).filter((s) => s.signedUrl).map((s) => [s.path, s.signedUrl]));
+      }
+      const meta = { clientName: row.client_name, submittedAt: row.submitted_at };
+      const opts = { pricing, includePricing, fileUrls: urls };
+      if (kind === 'pdf') {
+        saveFile(await briefPdf(a, meta, opts), briefFileName(a, meta, 'pdf'));
+      } else {
+        const md = briefMarkdown(a, meta, opts);
+        if (kind === 'md') {
+          saveFile(new Blob([md], { type: 'text/markdown;charset=utf-8' }), briefFileName(a, meta, 'md'));
+        } else {
+          await navigator.clipboard.writeText(md);
+          notify('Brief copied — paste it anywhere.', 'success');
+        }
+      }
+    } catch (err) {
+      notify(`Couldn’t export the brief — ${err instanceof Error ? err.message : 'try again'}`);
+    } finally {
+      setExporting('');
+    }
   }
 
   if (!row) return <p className="text-[var(--mist)]">Loading…</p>;
@@ -142,6 +180,38 @@ export default function BriefDetail({ params }: { params: Promise<{ id: string }
           ))}
         </select>
       </div>
+
+      {/* Download the full brief */}
+      {a && (
+        <div className="mt-6 rounded-md border border-[var(--silver)]/60 bg-[var(--graphite)] p-4">
+          <MonoLabel className="text-[var(--platinum)]">DOWNLOAD THE FULL BRIEF</MonoLabel>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => exportBrief('pdf')}
+              disabled={!!exporting}
+              className="inline-flex items-center gap-2 rounded-md bg-[var(--white)] text-[var(--obsidian)] px-4 py-2.5 text-sm font-semibold disabled:opacity-60"
+            >
+              {exporting === 'pdf' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              Download PDF
+            </button>
+            <button onClick={() => exportBrief('md')} disabled={!!exporting} className={actionCls}>
+              {exporting === 'md' ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+              Download for AI (.md)
+            </button>
+            <button onClick={() => exportBrief('copy')} disabled={!!exporting} className={actionCls}>
+              <Copy className="w-4 h-4" /> Copy text
+            </button>
+            <label className="flex items-center gap-2 text-sm text-[var(--mist)]">
+              <input type="checkbox" checked={includePricing} onChange={(e) => setIncludePricing(e.target.checked)} />
+              Include my pricing
+            </label>
+          </div>
+          <p className="mt-2 text-xs text-[var(--mist)]">
+            Every answer, in order, with links to uploaded files (valid 7 days). The .md file is ready to paste
+            into Claude as the build brief. Pricing stays out unless you tick the box.
+          </p>
+        </div>
+      )}
 
       {!a ? (
         <div className="mt-8 rounded-md border border-[var(--steel)] bg-[var(--graphite)] p-10 text-center">
